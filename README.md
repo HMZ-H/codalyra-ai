@@ -22,6 +22,7 @@ Codalyra-AI provides infrastructure to:
 | Migrations | Alembic |
 | Testing | pytest |
 | Package Manager | uv |
+| Frontend | React 19 + Vite |
 
 ## Quick Start
 
@@ -30,23 +31,24 @@ Codalyra-AI provides infrastructure to:
 git clone https://github.com/HMZ-H/codalyra-ai.git
 cd codalyra-ai
 
-# Environment
-cp .env.example .env
-
 # Start PostgreSQL & Redis
 docker compose up -d
 
-# Install dependencies
+# Backend
+cd backend
+cp .env.example .env
 uv sync
-
-# Run migrations
 uv run alembic upgrade head
-
-# Start dev server
 uv run fastapi dev app/main.py
+
+# Frontend (in a separate terminal)
+cd frontend
+npm install
+npm run dev
 ```
 
-Open [http://localhost:8000/docs](http://localhost:8000/docs) for interactive API docs.
+- Backend API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Frontend: [http://localhost:3000](http://localhost:3000)
 
 ## API Endpoints
 
@@ -68,20 +70,32 @@ Open [http://localhost:8000/docs](http://localhost:8000/docs) for interactive AP
 ## Project Structure
 
 ```
-app/
-  main.py              # FastAPI entry point
-  config.py            # Settings (pydantic-settings)
-  dependencies.py      # Auth dependencies
-  api/v1/              # Route handlers
-  core/                # Security, JWT, exceptions
-  database/models/     # 8 SQLAlchemy models
-  schemas/             # Pydantic validation
-  repositories/        # Data access layer
-  services/            # Business logic
-  tests/               # 21 unit tests
-  workers/             # Celery tasks (Phase 2)
-  ai/                  # LLM integration (Phase 3)
-  validators/          # Code validators (Phase 4)
+codalyra-ai/
+  backend/
+    app/
+      main.py              # FastAPI entry point
+      config.py            # Settings (pydantic-settings)
+      dependencies.py      # Auth dependencies
+      api/v1/              # Route handlers
+      core/                # Security, JWT, exceptions
+      database/models/     # 8 SQLAlchemy models
+      schemas/             # Pydantic validation
+      repositories/        # Data access layer
+      services/            # Business logic
+      tests/               # 21 unit tests
+      workers/             # Celery tasks (Phase 2)
+      ai/                  # LLM integration (Phase 3)
+      validators/          # Code validators (Phase 4)
+    alembic/               # Database migrations
+    pyproject.toml
+  frontend/
+    src/
+      api/                 # Axios client + API methods
+      components/          # Navbar, ProtectedRoute
+      context/             # AuthContext
+      pages/               # Login, Register, Dashboard, ProjectDetail
+      styles/              # CSS design system
+  docker-compose.yml       # PostgreSQL + Redis
 ```
 
 ## Data Model
@@ -98,7 +112,8 @@ User 1:N Project 1:N Repository
 ## Development
 
 ```bash
-# Run tests
+# Run tests (from backend/)
+cd backend
 uv run pytest
 
 # Generate migration after model changes
@@ -111,6 +126,7 @@ uv run alembic upgrade head
 ## Roadmap
 
 - [x] **Phase 1** - Backend Foundation (FastAPI, models, auth, CRUD, tests)
+- [x] **Phase 1.5** - Frontend (React dashboard, auth, project/repo/task management)
 - [ ] **Phase 2** - Task Execution (Celery workers, Docker sandboxes, Git integration)
 - [ ] **Phase 3** - Agent System (tool interface, trajectory recording, checkpoints)
 - [ ] **Phase 4** - Evaluation (validators, hidden tests, AI reviewer, scoring)

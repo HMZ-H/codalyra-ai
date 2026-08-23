@@ -31,6 +31,4 @@ testpaths = ["app/tests"]
 pythonpath = ["."]
 
 [dependency-groups]
-dev = [
-    "weasyprint",
-]
+dev = []
