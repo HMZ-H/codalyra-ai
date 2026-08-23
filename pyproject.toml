@@ -1,0 +1,36 @@
+[project]
+name = "codalyra-ai"
+version = "0.1.0"
+description = "Backend platform for creating, running, and evaluating AI coding-agent tasks"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.141.0",
+    "sqlalchemy>=2.0.50",
+    "psycopg2-binary>=2.9.12",
+    "alembic>=1.19.0",
+    "pydantic>=2.13.0",
+    "pydantic-settings>=2.15.0",
+    "email-validator>=2.3.0",
+    "python-jose[cryptography]>=3.5.0",
+    "bcrypt>=5.0.0",
+    "python-dotenv>=1.2.0",
+    "redis>=8.1.0",
+    "celery>=5.6.0",
+    "openai>=2.53.0",
+    "httpx>=0.28.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.1.0",
+    "ruff>=0.11.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["app/tests"]
+pythonpath = ["."]
+
+[dependency-groups]
+dev = [
+    "weasyprint",
+]
