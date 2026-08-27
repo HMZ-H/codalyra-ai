@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { projects as projectsApi, health } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { HiPlus, HiFolder, HiCheck, HiX } from 'react-icons/hi';
+import {
+  HiPlus, HiFolder, HiCheck, HiX, HiServer, HiLightningBolt, HiClipboardList,
+  HiChip, HiArrowRight,
+} from 'react-icons/hi';
 import toast from 'react-hot-toast';
 
 export default function Dashboard() {
@@ -11,6 +14,7 @@ export default function Dashboard() {
   const [showCreate, setShowCreate] = useState(false);
   const [newProject, setNewProject] = useState({ name: '', description: '' });
   const [apiHealth, setApiHealth] = useState(null);
+  const [dbHealth, setDbHealth] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProjects = async () => {
@@ -29,6 +33,9 @@ export default function Dashboard() {
     health.check()
       .then(() => setApiHealth(true))
       .catch(() => setApiHealth(false));
+    health.db()
+      .then(() => setDbHealth(true))
+      .catch(() => setDbHealth(false));
   }, []);
 
   const handleCreate = async (e) => {
@@ -69,6 +76,50 @@ export default function Dashboard() {
           <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
             <HiPlus /> New Project
           </button>
+        </div>
+      </div>
+
+      <div className="stats-row">
+        <div className="stat-card">
+          <div className="stat-icon stat-icon-accent"><HiFolder /></div>
+          <div className="stat-info">
+            <div className="stat-value">{projectList.length}</div>
+            <div className="stat-label">Projects</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon stat-icon-blue"><HiServer /></div>
+          <div className="stat-info">
+            <div className="stat-value">5</div>
+            <div className="stat-label">Workers</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon stat-icon-yellow"><HiChip /></div>
+          <div className="stat-info">
+            <div className="stat-value">3</div>
+            <div className="stat-label">Agent Types</div>
+          </div>
+        </div>
+        <Link to="/workers" className="stat-card stat-card-link">
+          <div className="stat-icon stat-icon-green"><HiLightningBolt /></div>
+          <div className="stat-info">
+            <div className="stat-value">{dbHealth ? 'OK' : '--'}</div>
+            <div className="stat-label">System Health</div>
+          </div>
+          <HiArrowRight className="stat-arrow" />
+        </Link>
+      </div>
+
+      <div className="pipeline-banner pipeline-banner-compact">
+        <div className="pipeline-flow">
+          <div className="pipeline-chip"><HiClipboardList /> Task</div>
+          <div className="pipeline-arrow-sm" />
+          <div className="pipeline-chip"><HiChip /> Agent</div>
+          <div className="pipeline-arrow-sm" />
+          <div className="pipeline-chip"><HiLightningBolt /> Worker</div>
+          <div className="pipeline-arrow-sm" />
+          <div className="pipeline-chip"><HiCheck /> Evaluate</div>
         </div>
       </div>
 

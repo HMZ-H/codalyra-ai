@@ -6,4 +6,7 @@ from app.services.execution_service import ExecutionService
 
 @celery_app.task(bind=True, max_retries=3)
 def execute_agent(self, run_id: str):
-    return asyncio.run(ExecutionService.execute(run_id))
+    try:
+        return asyncio.run(ExecutionService.execute(run_id))
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=10)

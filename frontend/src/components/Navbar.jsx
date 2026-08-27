@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { HiOutlineLogout, HiOutlineViewGrid } from 'react-icons/hi';
+import { HiOutlineLogout, HiOutlineViewGrid, HiServer } from 'react-icons/hi';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -23,6 +23,9 @@ export default function Navbar() {
             <>
               <Link to="/dashboard" className="nav-link">
                 <HiOutlineViewGrid /> Dashboard
+              </Link>
+              <Link to="/workers" className="nav-link">
+                <HiServer /> Workers
               </Link>
               <span className="nav-user">{user.username}</span>
               <button onClick={handleLogout} className="nav-link btn-link">

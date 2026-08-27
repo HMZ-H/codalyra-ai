@@ -56,6 +56,22 @@ export const tasks = {
   delete: (id) => client.delete(`/tasks/${id}`),
 };
 
+export const runs = {
+  list: (taskId) => client.get(`/runs/?task_id=${taskId}`),
+  get: (id) => client.get(`/runs/${id}`),
+  create: (data) => client.post('/runs/', data),
+  execute: (id) => client.post(`/runs/${id}/execute`),
+  evaluate: (id) => client.post(`/runs/${id}/evaluate`),
+};
+
+export const evaluations = {
+  getByRun: (runId) => client.get(`/evaluations/run/${runId}`),
+};
+
+export const trajectories = {
+  getByRun: (runId) => client.get(`/trajectories/run/${runId}`),
+};
+
 export const health = {
   check: () => client.get('/health'),
   db: () => client.get('/health/db'),

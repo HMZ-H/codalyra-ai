@@ -291,7 +291,7 @@ export default function ProjectDetail() {
               <tbody>
                 {taskList.map((task) => (
                   <tr key={task.id}>
-                    <td className="font-medium">{task.title}</td>
+                    <td className="font-medium"><Link to={`/tasks/${task.id}`} className="task-link">{task.title}</Link></td>
                     <td><span className={`badge ${difficultyColor[task.difficulty] || ''}`}>{task.difficulty}</span></td>
                     <td><span className={`badge ${statusColor[task.status] || ''}`}>{task.status}</span></td>
                     <td className="text-sm">{task.time_limit_seconds}s</td>

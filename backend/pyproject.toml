@@ -31,4 +31,7 @@ testpaths = ["app/tests"]
 pythonpath = ["."]
 
 [dependency-groups]
-dev = []
+dev = [
+    "pytest>=9.1.0",
+    "ruff>=0.11.0",
+]
