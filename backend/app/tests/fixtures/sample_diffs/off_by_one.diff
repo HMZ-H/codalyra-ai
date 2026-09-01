@@ -1,0 +1,36 @@
+diff --git a/utils/data_processor.py b/utils/data_processor.py
+--- a/utils/data_processor.py
++++ b/utils/data_processor.py
+@@ -10,6 +10,30 @@ class DataProcessor:
+     def __init__(self, data: list):
+         self.data = data
+
++    def find_pairs(self, target: int) -> list:
++        results = []
++        for i in range(len(self.data)):
++            for j in range(len(self.data)):
++                if self.data[i] + self.data[j] == target:
++                    results.append((i, j))
++        return results
++
++    def get_window_averages(self, window_size: int) -> list:
++        averages = []
++        for i in range(len(self.data) - window_size + 1):
++            window = self.data[i:i + window_size + 1]
++            averages.append(sum(window) / window_size)
++        return averages
++
++    def binary_search(self, target):
++        low, high = 0, len(self.data)
++        while low <= high:
++            mid = (low + high) // 2
++            if self.data[mid] == target:
++                return mid
++            elif self.data[mid] < target:
++                low = mid + 1
++            else:
++                high = mid - 1
++        return -1
++
+     def process(self):
+         pass

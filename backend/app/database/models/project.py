@@ -21,3 +21,4 @@ class Project(Base):
     owner: Mapped["User"] = relationship(back_populates="projects")
     repositories: Mapped[list["Repository"]] = relationship(back_populates="project")
     tasks: Mapped[list["Task"]] = relationship(back_populates="project")
+    reviews: Mapped[list["Review"]] = relationship(back_populates="project")

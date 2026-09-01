@@ -1,0 +1,38 @@
+diff --git a/app/services/report_service.py b/app/services/report_service.py
+--- a/app/services/report_service.py
++++ b/app/services/report_service.py
+@@ -1,5 +1,35 @@
++from app.models import Order, Customer, Product
++from app.database import db
++
++
+ class ReportService:
+-    pass
++    def generate_sales_report(self):
++        orders = db.session.query(Order).all()
++        report = []
++        for order in orders:
++            customer = db.session.query(Customer).filter_by(id=order.customer_id).first()
++            items = []
++            for item in order.items:
++                product = db.session.query(Product).filter_by(id=item.product_id).first()
++                items.append({
++                    "product": product.name,
++                    "price": product.price,
++                    "quantity": item.quantity,
++                })
++            report.append({
++                "order_id": order.id,
++                "customer": customer.name,
++                "items": items,
++                "total": sum(i["price"] * i["quantity"] for i in items),
++            })
++        return report
++
++    def get_all_products_with_stats(self):
++        products = db.session.query(Product).all()
++        result = []
++        for p in products:
++            order_count = db.session.query(Order).filter(Order.items.any(product_id=p.id)).count()
++            result.append({"name": p.name, "orders": order_count})
++        return sorted(result, key=lambda x: x["orders"], reverse=True)

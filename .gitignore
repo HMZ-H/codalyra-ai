@@ -1,4 +1,5 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
@@ -9,5 +10,7 @@ __pycache__/
 .ruff_cache/
 *.db
 *.sqlite3
-alembic/versions/__pycache__/
 .DS_Store
+node_modules/
+backend/uv.lock
+cp-problem/

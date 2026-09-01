@@ -72,6 +72,13 @@ export const trajectories = {
   getByRun: (runId) => client.get(`/trajectories/run/${runId}`),
 };
 
+export const reviews = {
+  create: (data) => client.post('/reviews/', data),
+  list: (projectId) => client.get(`/reviews/?project_id=${projectId}`),
+  get: (id) => client.get(`/reviews/${id}`),
+  report: (id) => client.get(`/reviews/${id}/report`),
+};
+
 export const health = {
   check: () => client.get('/health'),
   db: () => client.get('/health/db'),

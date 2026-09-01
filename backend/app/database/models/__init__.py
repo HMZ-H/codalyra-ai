@@ -6,6 +6,7 @@ from app.database.models.run import Run
 from app.database.models.checkpoint import Checkpoint
 from app.database.models.trajectory import Trajectory
 from app.database.models.evaluation import Evaluation
+from app.database.models.review import Review
 
 __all__ = [
     "User",
@@ -16,4 +17,5 @@ __all__ = [
     "Checkpoint",
     "Trajectory",
     "Evaluation",
+    "Review",
 ]

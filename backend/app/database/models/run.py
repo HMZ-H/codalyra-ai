@@ -23,7 +23,10 @@ class Run(Base):
     created_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now())
     updated_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), onupdate=sa.func.now())
 
+    review_id: Mapped[uuid.UUID | None] = mapped_column(sa.ForeignKey("reviews.id"), nullable=True, index=True)
+
     task: Mapped["Task"] = relationship(back_populates="runs")
+    review: Mapped["Review | None"] = relationship(back_populates="runs")
     checkpoints: Mapped[list["Checkpoint"]] = relationship(back_populates="run")
     trajectories: Mapped[list["Trajectory"]] = relationship(back_populates="run")
     evaluation: Mapped["Evaluation | None"] = relationship(back_populates="run", uselist=False)

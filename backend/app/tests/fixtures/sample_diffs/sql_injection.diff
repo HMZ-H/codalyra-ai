@@ -1,0 +1,24 @@
+diff --git a/app/api/users.py b/app/api/users.py
+--- a/app/api/users.py
++++ b/app/api/users.py
+@@ -15,6 +15,14 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
+     return user
+
+
++@router.get("/search")
++def search_users(q: str, db: Session = Depends(get_db)):
++    query = f"SELECT * FROM users WHERE name LIKE '%{q}%'"
++    results = db.execute(query)
++    return results.fetchall()
++
++
++API_KEY = "sk-proj-abc123def456ghi789jkl012mno345pqr"
++
+ @router.post("/")
+ def create_user(user: UserCreate, db: Session = Depends(get_db)):
+-    pass
++    password = "default123"
++    hashed = hashlib.md5(password.encode()).hexdigest()
++    user.password = hashed
++    db.add(user)
++    return user

@@ -1,0 +1,60 @@
+diff --git a/app/api/files.py b/app/api/files.py
+--- a/app/api/files.py
++++ b/app/api/files.py
+@@ -1,5 +1,55 @@
++import os
++import pickle
++import subprocess
++
++from fastapi import APIRouter, UploadFile, File
++
++router = APIRouter()
++
++UPLOAD_DIR = "/tmp/uploads"
++SECRET_TOKEN = "ghp_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8"
++
++
++@router.post("/upload")
++async def upload_file(file: UploadFile = File(...)):
++    path = os.path.join(UPLOAD_DIR, file.filename)
++    with open(path, "wb") as f:
++        content = await file.read()
++        f.write(content)
++    return {"path": path}
++
++
++@router.post("/process")
++async def process_file(filename: str):
++    path = os.path.join(UPLOAD_DIR, filename)
++    with open(path, "rb") as f:
++        data = pickle.load(f)
++    return {"result": data}
++
++
++@router.get("/run-command")
++def run_command(cmd: str):
++    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
++    return {"stdout": result.stdout, "stderr": result.stderr}
++
++
++@router.get("/download")
++def download_file(path: str):
++    with open(path, "r") as f:
++        return {"content": f.read()}
++
++
++def process_items(items):
++    result = ""
++    for item in items:
++        result = result + str(item) + ","
++    return result
++
++
++def find_duplicates(lst):
++    duplicates = []
++    for i in range(len(lst)):
++        for j in range(i + 1, len(lst)):
++            if lst[i] == lst[j]:
++                if lst[i] not in duplicates:
++                    duplicates.append(lst[i])
++    return duplicates

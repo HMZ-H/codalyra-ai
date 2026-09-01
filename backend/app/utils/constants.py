@@ -1,3 +1,6 @@
 TASK_STATUSES = ("draft", "active", "archived")
 RUN_STATUSES = ("pending", "running", "completed", "failed", "timeout")
 DIFFICULTY_LEVELS = ("easy", "medium", "hard")
+REVIEW_STATUSES = ("pending", "running", "completed", "failed")
+AGENT_TYPES = ("logic", "security", "performance", "quality", "synthesis", "baseline")
+SEVERITY_LEVELS = ("critical", "warning", "info")

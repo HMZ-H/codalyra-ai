@@ -4,9 +4,10 @@ import { projects as projectsApi, health } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import {
   HiPlus, HiFolder, HiCheck, HiX, HiServer, HiLightningBolt, HiClipboardList,
-  HiChip, HiArrowRight,
+  HiChip, HiArrowRight, HiShieldCheck,
 } from 'react-icons/hi';
 import toast from 'react-hot-toast';
+import ReviewSubmit from '../components/ReviewSubmit';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const [apiHealth, setApiHealth] = useState(null);
   const [dbHealth, setDbHealth] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showReview, setShowReview] = useState(false);
 
   const fetchProjects = async () => {
     try {
@@ -73,6 +75,9 @@ export default function Dashboard() {
           <span className={`status-badge ${apiHealth ? 'status-ok' : 'status-err'}`}>
             {apiHealth ? <><HiCheck /> API Online</> : <><HiX /> API Offline</>}
           </span>
+          <button className="btn btn-accent" onClick={() => setShowReview(true)}>
+            <HiShieldCheck /> Review Code
+          </button>
           <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
             <HiPlus /> New Project
           </button>
@@ -122,6 +127,8 @@ export default function Dashboard() {
           <div className="pipeline-chip"><HiCheck /> Evaluate</div>
         </div>
       </div>
+
+      <ReviewSubmit isOpen={showReview} onClose={() => setShowReview(false)} />
 
       {showCreate && (
         <div className="modal-overlay" onClick={() => setShowCreate(false)}>
