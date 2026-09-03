@@ -21,6 +21,10 @@ class UserRepository:
         stmt = select(User).where(User.username == username)
         return self.db.scalars(stmt).first()
 
+    def get_by_github_id(self, github_id: int) -> User | None:
+        stmt = select(User).where(User.github_id == github_id)
+        return self.db.scalars(stmt).first()
+
     def create(self, user_data: dict) -> User:
         user = User(**user_data)
         self.db.add(user)

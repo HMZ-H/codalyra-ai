@@ -25,5 +25,7 @@ class UserResponse(UserBase):
 
     id: uuid.UUID
     is_active: bool
+    avatar_url: str | None = None
+    github_username: str | None = None
     created_at: datetime
     updated_at: datetime | None = None
