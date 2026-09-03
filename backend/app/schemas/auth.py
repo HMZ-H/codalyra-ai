@@ -14,3 +14,7 @@ class Token(BaseModel):
 class TokenPayload(BaseModel):
     sub: str
     exp: int
+
+
+class GitHubCallbackRequest(BaseModel):
+    code: str
