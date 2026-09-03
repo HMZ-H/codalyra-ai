@@ -7,6 +7,7 @@ from app.database.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import Token
 from app.schemas.user import UserCreate
+from app.services.github_service import GitHubService
 
 
 class AuthService:
@@ -35,3 +36,53 @@ class AuthService:
 
         access_token = create_access_token(subject=str(user.id))
         return Token(access_token=access_token)
+
+    async def github_login(self, code: str) -> Token:
+        token_data = await GitHubService.exchange_code_for_token(code)
+        access_token = token_data["access_token"]
+
+        gh_user = await GitHubService.get_github_user(access_token)
+        github_id = gh_user["id"]
+        github_username = gh_user["login"]
+        avatar_url = gh_user.get("avatar_url")
+        full_name = gh_user.get("name") or github_username
+
+        email = gh_user.get("email")
+        if not email:
+            emails = await GitHubService.get_user_emails(access_token)
+            primary = next((e for e in emails if e.get("primary")), None)
+            email = primary["email"] if primary else f"{github_username}@github.noreply.com"
+
+        user = self.repo.get_by_github_id(github_id)
+        if user:
+            self.repo.update(user, {
+                "github_token": access_token,
+                "avatar_url": avatar_url,
+                "github_username": github_username,
+            })
+        else:
+            existing_email = self.repo.get_by_email(email)
+            if existing_email:
+                self.repo.update(existing_email, {
+                    "github_id": github_id,
+                    "github_username": github_username,
+                    "github_token": access_token,
+                    "avatar_url": avatar_url,
+                })
+                user = existing_email
+            else:
+                username = github_username
+                if self.repo.get_by_username(username):
+                    username = f"{github_username}-gh"
+                user = self.repo.create({
+                    "email": email,
+                    "username": username,
+                    "full_name": full_name,
+                    "github_id": github_id,
+                    "github_username": github_username,
+                    "github_token": access_token,
+                    "avatar_url": avatar_url,
+                })
+
+        jwt_token = create_access_token(subject=str(user.id))
+        return Token(access_token=jwt_token)
