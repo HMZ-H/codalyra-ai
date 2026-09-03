@@ -33,6 +33,7 @@ pythonpath = ["."]
 
 [dependency-groups]
 dev = [
+    "fpdf2>=2.8.8",
     "pytest>=9.1.0",
     "ruff>=0.11.0",
 ]
