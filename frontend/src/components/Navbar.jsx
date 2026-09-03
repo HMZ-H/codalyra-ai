@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { HiOutlineLogout, HiOutlineViewGrid, HiServer } from 'react-icons/hi';
+import { HiOutlineLogout, HiOutlineViewGrid, HiServer, HiCode } from 'react-icons/hi';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -24,10 +24,16 @@ export default function Navbar() {
               <Link to="/dashboard" className="nav-link">
                 <HiOutlineViewGrid /> Dashboard
               </Link>
+              <Link to="/github" className="nav-link">
+                <HiCode /> GitHub
+              </Link>
               <Link to="/workers" className="nav-link">
                 <HiServer /> Workers
               </Link>
-              <span className="nav-user">{user.username}</span>
+              <div className="nav-user">
+                {user.avatar_url && <img src={user.avatar_url} alt="" className="nav-avatar" />}
+                {user.username}
+              </div>
               <button onClick={handleLogout} className="nav-link btn-link">
                 <HiOutlineLogout /> Logout
               </button>
