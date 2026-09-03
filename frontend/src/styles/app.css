@@ -106,9 +106,17 @@ body {
 }
 .nav-link-primary:hover { background: var(--accent-hover); color: #fff; }
 .nav-user {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 13px;
   color: var(--text-muted);
   font-family: 'JetBrains Mono', monospace;
+}
+.nav-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
 }
 .btn-link {
   background: none;
@@ -659,6 +667,39 @@ body {
 }
 .auth-footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
 .auth-footer a:hover { text-decoration: underline; }
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.25rem 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.btn-github {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  background: #24292e;
+  color: #fff;
+  border: 1px solid #444d56;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-github:hover {
+  background: #2f363d;
+}
 
 /* ============ MODAL ============ */
 .modal-overlay {
