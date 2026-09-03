@@ -30,6 +30,7 @@ export const auth = {
   register: (data) => client.post('/auth/register', data),
   login: (data) => client.post('/auth/login', data),
   me: () => client.get('/auth/me'),
+  githubCallback: (code) => client.post('/auth/github/callback', { code }),
 };
 
 export const projects = {
@@ -77,6 +78,15 @@ export const reviews = {
   list: (projectId) => client.get(`/reviews/?project_id=${projectId}`),
   get: (id) => client.get(`/reviews/${id}`),
   report: (id) => client.get(`/reviews/${id}/report`),
+};
+
+export const github = {
+  listRepos: (page = 1) => client.get(`/github/repos?page=${page}`),
+  connectRepo: (data) => client.post('/github/repos/connect', data),
+  listPulls: (owner, repo, state = 'open') => client.get(`/github/repos/${owner}/${repo}/pulls?state=${state}`),
+  getPullDiff: (owner, repo, prNumber) => client.get(`/github/repos/${owner}/${repo}/pulls/${prNumber}/diff`),
+  reviewPull: (owner, repo, prNumber, data) => client.post(`/github/repos/${owner}/${repo}/pulls/${prNumber}/review`, data),
+  postComments: (owner, repo, prNumber, data) => client.post(`/github/repos/${owner}/${repo}/pulls/${prNumber}/post-comments`, data),
 };
 
 export const health = {

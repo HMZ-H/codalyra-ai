@@ -32,13 +32,21 @@ export function AuthProvider({ children }) {
     return login(data.email, data.password);
   };
 
+  const loginWithGithub = async (code) => {
+    const res = await auth.githubCallback(code);
+    localStorage.setItem('token', res.data.access_token);
+    const me = await auth.me();
+    setUser(me.data);
+    return me.data;
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, loginWithGithub, logout }}>
       {children}
     </AuthContext.Provider>
   );
