@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { reviews } from '../api/client';
+import useReviewSocket from '../hooks/useReviewSocket';
 import {
   HiShieldCheck, HiLightningBolt, HiCode, HiBeaker,
   HiChevronDown, HiChevronRight, HiArrowLeft, HiFilter,
+  HiTerminal, HiDocumentText,
 } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 
 const SEVERITY_COLORS = {
-  critical: { bg: '#2d1215', border: '#dc2626', text: '#fca5a5', label: 'Critical' },
-  warning: { bg: '#2d2305', border: '#d97706', text: '#fcd34d', label: 'Warning' },
-  info: { bg: '#0c1929', border: '#2563eb', text: '#93c5fd', label: 'Info' },
+  critical: { bg: 'var(--sev-critical-bg)', border: 'var(--sev-critical)', text: '#fca5a5', label: 'Critical' },
+  warning: { bg: 'var(--sev-warning-bg)', border: 'var(--sev-warning)', text: '#fcd34d', label: 'Warning' },
+  info: { bg: 'var(--sev-info-bg)', border: 'var(--sev-info)', text: '#93c5fd', label: 'Info' },
 };
 
 const AGENT_META = {
@@ -64,9 +66,86 @@ function AgentCard({ agentType, run }) {
         {isFailed && <span className="agent-fail">&#10007;</span>}
         {!isRunning && !isCompleted && !isFailed && <span className="agent-pending">&#8230;</span>}
       </div>
-      {run?.findingsCount !== undefined && (
+      {run?.findings_count !== undefined && run.findings_count > 0 && (
+        <div className="agent-card-findings">{run.findings_count} findings</div>
+      )}
+      {run?.findingsCount !== undefined && run.findingsCount > 0 && (
         <div className="agent-card-findings">{run.findingsCount} findings</div>
       )}
+    </div>
+  );
+}
+
+function AgentLogs({ logs }) {
+  if (!logs || logs.length === 0) return null;
+
+  return (
+    <div className="review-section">
+      <h2><HiTerminal style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />Agent Activity</h2>
+      <div className="agent-logs">
+        {logs.map((log, i) => (
+          <div key={i} className="agent-log-entry">
+            <span className="log-agent" style={{ color: AGENT_META[log.agent]?.color || '#888' }}>
+              {AGENT_META[log.agent]?.label || log.agent}
+            </span>
+            <span className="log-action">{log.action}</span>
+            {log.output && <span className="log-output">{log.output}</span>}
+            {log.duration_ms > 0 && <span className="log-duration">{(log.duration_ms / 1000).toFixed(1)}s</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DiffViewer({ diffContent, findings }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!diffContent) return null;
+
+  const lines = diffContent.split('\n');
+  const displayLines = expanded ? lines : lines.slice(0, 80);
+  const findingsByLine = {};
+  (findings || []).forEach((f) => {
+    if (f.line) {
+      if (!findingsByLine[f.line]) findingsByLine[f.line] = [];
+      findingsByLine[f.line].push(f);
+    }
+  });
+
+  return (
+    <div className="review-section">
+      <h2><HiDocumentText style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />Diff</h2>
+      <div className="diff-viewer">
+        {displayLines.map((line, i) => {
+          let cls = 'diff-line';
+          if (line.startsWith('+') && !line.startsWith('+++')) cls += ' diff-add';
+          else if (line.startsWith('-') && !line.startsWith('---')) cls += ' diff-del';
+          else if (line.startsWith('@@')) cls += ' diff-hunk';
+          else if (line.startsWith('diff ')) cls += ' diff-header';
+
+          const lineFindings = findingsByLine[i + 1] || [];
+
+          return (
+            <div key={i}>
+              <div className={cls}>
+                <span className="diff-line-num">{i + 1}</span>
+                <span className="diff-line-content">{line || ' '}</span>
+              </div>
+              {lineFindings.map((f, fi) => (
+                <div key={fi} className="diff-annotation" style={{ borderLeftColor: SEVERITY_COLORS[f.severity]?.border || '#666' }}>
+                  <span className="diff-annotation-sev">{f.severity}</span>
+                  <span>{f.message}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+        {!expanded && lines.length > 80 && (
+          <button className="btn btn-sm btn-secondary" style={{ margin: '0.5rem' }} onClick={() => setExpanded(true)}>
+            Show all {lines.length} lines
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -107,6 +186,9 @@ export default function ReviewDetail() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [expandedFiles, setExpandedFiles] = useState({});
+  const [activeTab, setActiveTab] = useState('findings');
+
+  const { state: wsState, connected: wsConnected } = useReviewSocket(reviewId);
 
   const fetchData = useCallback(async () => {
     try {
@@ -128,16 +210,32 @@ export default function ReviewDetail() {
   }, [fetchData]);
 
   useEffect(() => {
+    if (wsState?.status === 'completed' && (!review || review.status !== 'completed')) {
+      fetchData();
+    }
+  }, [wsState?.status]);
+
+  useEffect(() => {
     if (!review || review.status === 'completed' || review.status === 'failed') return;
+    if (wsConnected) return;
     const interval = setInterval(fetchData, 3000);
     return () => clearInterval(interval);
-  }, [review?.status, fetchData]);
+  }, [review?.status, wsConnected, fetchData]);
 
   if (loading) return <div className="page"><div className="loading">Loading review...</div></div>;
   if (!review) return <div className="page"><div className="empty-state">Review not found</div></div>;
 
+  const liveStatus = wsState?.status || review.status;
+  const liveScore = wsState?.overall_score ?? review.overall_score;
+  const liveSummary = wsState?.summary || review.summary;
+  const liveFindingsCount = wsState?.findings_count ?? review.findings_count;
+
   const agentRuns = {};
-  if (report?.agent_results) {
+  if (wsState?.agent_runs) {
+    Object.entries(wsState.agent_runs).forEach(([type, data]) => {
+      agentRuns[type] = data;
+    });
+  } else if (report?.agent_results) {
     report.agent_results.forEach((ar) => {
       agentRuns[ar.agent_type] = {
         status: ar.status,
@@ -170,19 +268,22 @@ export default function ReviewDetail() {
         <div>
           <Link to="/dashboard" className="back-link"><HiArrowLeft /> Dashboard</Link>
           <h1>{review.pr_title || 'Code Review'}</h1>
-          <span className={`status-badge status-${review.status}`}>{review.status}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.3rem' }}>
+            <span className={`status-badge status-${liveStatus}`}>{liveStatus}</span>
+            {wsConnected && <span className="ws-indicator" title="Live updates active" />}
+          </div>
         </div>
       </div>
 
       {/* Score + Summary */}
       <div className="review-summary-row">
-        {review.overall_score !== null && review.overall_score !== undefined && (
-          <ScoreGauge score={review.overall_score} />
+        {liveScore !== null && liveScore !== undefined && (
+          <ScoreGauge score={liveScore} />
         )}
         <div className="review-summary-text">
-          {review.summary && <p>{review.summary}</p>}
+          {liveSummary && <p>{liveSummary}</p>}
           <div className="review-meta-chips">
-            <span className="meta-chip">{review.findings_count} findings</span>
+            <span className="meta-chip">{liveFindingsCount} findings</span>
             {findings.filter((f) => f.severity === 'critical').length > 0 && (
               <span className="meta-chip meta-chip-critical">
                 {findings.filter((f) => f.severity === 'critical').length} critical
@@ -210,8 +311,71 @@ export default function ReviewDetail() {
         </div>
       </div>
 
-      {/* Baseline Comparison */}
-      {comparison && (
+      {/* Agent Logs (live from WebSocket) */}
+      <AgentLogs logs={wsState?.recent_logs} />
+
+      {/* Tabs: Findings | Diff | Baseline */}
+      <div className="review-tabs">
+        <button className={`review-tab ${activeTab === 'findings' ? 'active' : ''}`} onClick={() => setActiveTab('findings')}>
+          Findings {findings.length > 0 && `(${findings.length})`}
+        </button>
+        <button className={`review-tab ${activeTab === 'diff' ? 'active' : ''}`} onClick={() => setActiveTab('diff')}>
+          Diff
+        </button>
+        {comparison && (
+          <button className={`review-tab ${activeTab === 'baseline' ? 'active' : ''}`} onClick={() => setActiveTab('baseline')}>
+            Baseline Comparison
+          </button>
+        )}
+      </div>
+
+      {/* Findings tab */}
+      {activeTab === 'findings' && findings.length > 0 && (
+        <div className="review-section">
+          <div className="findings-header">
+            <div className="filter-buttons">
+              {['all', 'critical', 'warning', 'info'].map((f) => (
+                <button
+                  key={f}
+                  className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setFilter(f)}
+                >
+                  {f === 'all' ? `All (${findings.length})` : `${f} (${findings.filter((x) => x.severity === f).length})`}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {Object.entries(fileGroups).map(([file, fileFindings]) => (
+            <div key={file} className="finding-file-group">
+              <button className="finding-file-header" onClick={() => toggleFile(file)}>
+                {expandedFiles[file] !== false ? <HiChevronDown /> : <HiChevronRight />}
+                <span className="finding-filename">{file}</span>
+                <span className="finding-file-count">{fileFindings.length}</span>
+              </button>
+              {expandedFiles[file] !== false && (
+                <div className="finding-file-list">
+                  {fileFindings.map((f, i) => <FindingCard key={i} finding={f} />)}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'findings' && findings.length === 0 && liveStatus === 'completed' && (
+        <div className="review-section">
+          <div className="empty-state" style={{ padding: '2rem' }}>No findings detected.</div>
+        </div>
+      )}
+
+      {/* Diff tab */}
+      {activeTab === 'diff' && (
+        <DiffViewer diffContent={review.diff_content} findings={findings} />
+      )}
+
+      {/* Baseline tab */}
+      {activeTab === 'baseline' && comparison && (
         <div className="review-section">
           <h2>Multi-Agent vs Single-Prompt Baseline</h2>
           <div className="comparison-grid">
@@ -231,41 +395,6 @@ export default function ReviewDetail() {
               <div className="comparison-unique">+{comparison.unique_to_baseline} unique findings</div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Findings */}
-      {findings.length > 0 && (
-        <div className="review-section">
-          <div className="findings-header">
-            <h2>Findings</h2>
-            <div className="filter-buttons">
-              {['all', 'critical', 'warning', 'info'].map((f) => (
-                <button
-                  key={f}
-                  className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setFilter(f)}
-                >
-                  {f === 'all' ? `All (${findings.length})` : `${f} (${findings.filter((x) => x.severity === f).length})`}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {Object.entries(fileGroups).map(([file, fileFindigs]) => (
-            <div key={file} className="finding-file-group">
-              <button className="finding-file-header" onClick={() => toggleFile(file)}>
-                {expandedFiles[file] !== false ? <HiChevronDown /> : <HiChevronRight />}
-                <span className="finding-filename">{file}</span>
-                <span className="finding-file-count">{fileFindigs.length}</span>
-              </button>
-              {expandedFiles[file] !== false && (
-                <div className="finding-file-list">
-                  {fileFindigs.map((f, i) => <FindingCard key={i} finding={f} />)}
-                </div>
-              )}
-            </div>
-          ))}
         </div>
       )}
     </div>
