@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1 import api_router
+from app.api.v1.ws import router as ws_router
 from app.config import settings
 from app.core.exceptions import CodalyraException
 
@@ -31,3 +32,4 @@ def codalyra_exception_handler(request: Request, exc: CodalyraException) -> JSON
 
 
 app.include_router(api_router)
+app.include_router(ws_router)
