@@ -1,7 +1,5 @@
 # Codalyra-AI: Agentic PR Review Pipeline
 
-> **micro1 Agentic Workflows Hackathon Submission**
-
 A multi-agent code review system where 4 specialized AI agents analyze a code diff from different angles, then a synthesis agent combines their findings into a unified, prioritized report — with a built-in single-prompt baseline for measurable comparison.
 
 ## The Problem
@@ -137,42 +135,28 @@ Runs both multi-agent and single-prompt baseline on 5 curated diffs and outputs 
 
 ## Architecture
 
-### What existed before the hackathon
-- FastAPI backend with 8 SQLAlchemy models (User, Project, Repository, Task, Run, Checkpoint, Trajectory, Evaluation)
-- JWT authentication
-- CRUD APIs for all entities
-- Celery task queue with execution/evaluation workers
-- React frontend with dashboard, project management, task/run views
-- Empty stub files for AI, GitHub, validators, and review modules
+### Core Platform
+- FastAPI backend with 8+ SQLAlchemy models (User, Project, Repository, Task, Run, Review, Checkpoint, Trajectory, Evaluation)
+- JWT authentication with bcrypt password hashing
+- CRUD APIs for all entities with ownership enforcement
+- Celery task queue with parallel agent execution workers
+- React frontend with dashboard, project management, and review visualization
 
-### What was added for the hackathon
+### Multi-Agent Review Layer
 - **Review model** — groups multiple agent runs into one review
-- **AI layer** — Gemini client, 6 specialized prompt templates, agent reviewer, finding analyzer
-- **Static validators** — regex-based security + Python checks
+- **AI layer** — Gemini client with JSON mode, 6 specialized prompt templates, agent reviewer, finding analyzer
+- **Static validators** — 12 security regex patterns + 6 Python code smell patterns
 - **Review workers** — Celery tasks orchestrating parallel agent execution + synthesis triggering
 - **Review API** — submit, list, get, report endpoints
-- **ReviewDetail page** — pipeline visualization, findings display, baseline comparison
+- **ReviewDetail page** — pipeline visualization, score gauge, findings display, baseline comparison
 - **ReviewSubmit modal** — diff input with sample loading
-- **Evaluation script** — automated comparison across sample diffs
+- **Evaluation script** — automated benchmark comparison across sample diffs
 
-## Hot Take
+## Design Philosophy
 
 Single-agent code review is fundamentally limited because reviewing code requires holding multiple conflicting mental models simultaneously. A security mindset is adversarial to the code. A performance mindset is sympathetic to the machine. A quality mindset is sympathetic to the next developer. No single prompt can authentically adopt all four stances — it compromises on depth to cover breadth.
 
-Multi-agent specialization is not a hack; it mirrors how expert human teams actually work. The key insight is that the synthesis agent is more important than the specialists — without deduplication and prioritization, multi-agent review produces noise, not signal. The orchestration is the product.
-
-## Reproduction Guide
-
-See [Quick Start](#quick-start) above. From a clean environment:
-
-1. `docker compose up -d` — starts PostgreSQL and Redis
-2. Set `GEMINI_API_KEY` in `backend/.env`
-3. `cd backend && uv sync && uv run alembic upgrade head`
-4. `uv run fastapi dev app/main.py` — starts the API
-5. `uv run celery -A app.workers.celery_app worker -l info -c 4` — starts workers
-6. `cd frontend && npm install && npm run dev` — starts the UI
-7. Register, create project, click "Review Code", paste diff or load sample
-8. Run `python -m app.scripts.run_evaluation` for benchmark comparison
+Multi-agent specialization mirrors how expert human teams actually work. The key insight is that the synthesis agent is more important than the specialists — without deduplication and prioritization, multi-agent review produces noise, not signal. The orchestration is the product.
 
 **Approximate runtime:** Each review takes ~20-40 seconds (5 LLM calls in parallel + 1 synthesis).
 **Approximate cost:** ~$0.01-0.03 per review with Gemini Flash pricing.
