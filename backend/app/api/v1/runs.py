@@ -8,6 +8,7 @@ from app.dependencies import get_current_active_user
 from app.database.models.user import User
 from app.schemas.run import RunCreate, RunResponse
 from app.repositories.run_repository import RunRepository
+from app.core.permissions import verify_task_owner, verify_run_owner
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -18,6 +19,7 @@ def create_run(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> RunResponse:
+    verify_task_owner(db, run_data.task_id, current_user.id)
     repo = RunRepository(db)
     run = repo.create(run_data.model_dump())
     return run
@@ -31,6 +33,7 @@ def list_runs(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> list[RunResponse]:
+    verify_task_owner(db, task_id, current_user.id)
     repo = RunRepository(db)
     return repo.get_by_task(task_id, skip=skip, limit=limit)
 
@@ -41,6 +44,7 @@ def get_run(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> RunResponse:
+    verify_run_owner(db, run_id, current_user.id)
     repo = RunRepository(db)
     run = repo.get_by_id(run_id)
     if not run:
@@ -55,12 +59,7 @@ def execute_run(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> dict:
-    repo = RunRepository(db)
-    run = repo.get_by_id(run_id)
-    if not run:
-        from app.core.exceptions import NotFoundException
-        raise NotFoundException("Run not found")
-
+    verify_run_owner(db, run_id, current_user.id)
     from app.workers.execution_tasks import execute_agent
     execute_agent.delay(str(run_id))
     return {"status": "queued", "run_id": str(run_id)}
@@ -72,12 +71,7 @@ def evaluate_run_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> dict:
-    repo = RunRepository(db)
-    run = repo.get_by_id(run_id)
-    if not run:
-        from app.core.exceptions import NotFoundException
-        raise NotFoundException("Run not found")
-
+    verify_run_owner(db, run_id, current_user.id)
     from app.workers.evaluation_tasks import evaluate_run
     evaluate_run.delay(str(run_id))
     return {"status": "queued", "run_id": str(run_id)}
