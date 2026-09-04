@@ -89,6 +89,12 @@ export const github = {
   postComments: (owner, repo, prNumber, data) => client.post(`/github/repos/${owner}/${repo}/pulls/${prNumber}/post-comments`, data),
 };
 
+export const settings = {
+  getApiKeyStatus: () => client.get('/settings/api-keys'),
+  updateApiKey: (gemini_api_key) => client.put('/settings/api-keys', { gemini_api_key }),
+  deleteApiKey: () => client.delete('/settings/api-keys'),
+};
+
 export const health = {
   check: () => client.get('/health'),
   db: () => client.get('/health/db'),
