@@ -111,8 +111,8 @@ export default function GitHubRepos() {
         <div className="empty-state">
           <HiCode className="empty-icon" />
           <h3>GitHub Not Connected</h3>
-          <p>Log in with GitHub to connect your repositories and review PRs automatically.</p>
-          <button className="btn btn-primary" onClick={() => navigate('/login')}>
+          <p>Connect your GitHub account to browse repositories and review PRs automatically.</p>
+          <button className="btn btn-primary" onClick={() => navigate('/settings')}>
             Connect GitHub
           </button>
         </div>
