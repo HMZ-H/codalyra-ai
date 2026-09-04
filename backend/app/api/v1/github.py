@@ -13,8 +13,11 @@ from app.dependencies import get_current_active_user
 from app.database.models.user import User
 from app.database.models.repository import Repository
 from app.database.models.review import Review
+from app.schemas.review import MAX_DIFF_SIZE
 from app.services.github_service import GitHubService
 from app.services.review_service import ReviewService
+from app.core.permissions import verify_project_owner, verify_review_owner
+from app.middleware.rate_limit import check_rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +47,8 @@ def connect_repo(
     project_id = data.get("project_id")
     if not project_id:
         raise HTTPException(400, "project_id is required")
+
+    verify_project_owner(db, uuid.UUID(project_id), current_user.id)
 
     repo = Repository(
         project_id=uuid.UUID(project_id),
@@ -102,11 +107,14 @@ def review_pull_request(
     if not project_id:
         raise HTTPException(400, "project_id is required")
 
+    verify_project_owner(db, uuid.UUID(project_id), current_user.id)
+    check_rate_limit(str(current_user.id), action="review", max_requests=10)
+
     gh = GitHubService(current_user.github_token)
     diff = gh.get_pull_diff(owner, repo, pr_number)
 
-    if len(diff) > 100_000:
-        raise HTTPException(400, "Diff too large (max 100KB)")
+    if len(diff) > MAX_DIFF_SIZE:
+        raise HTTPException(400, f"Diff too large (max {MAX_DIFF_SIZE} chars)")
 
     pr_title = f"PR #{pr_number} - {owner}/{repo}"
     review = ReviewService.create_review(
@@ -134,6 +142,8 @@ def post_review_to_pr(
     review_id = data.get("review_id")
     if not review_id:
         raise HTTPException(400, "review_id is required")
+
+    verify_review_owner(db, uuid.UUID(review_id), current_user.id)
 
     report = ReviewService.get_review_report(db, uuid.UUID(review_id))
     if not report:
@@ -197,7 +207,7 @@ async def github_webhook(
         gh = GitHubService(user.github_token)
         diff = gh.get_pull_diff(owner, repo_name, pr_number)
 
-        if len(diff) > 100_000:
+        if len(diff) > MAX_DIFF_SIZE:
             return {"status": "skipped", "reason": "diff too large"}
 
         review = ReviewService.create_review(
