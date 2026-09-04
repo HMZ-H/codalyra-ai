@@ -12,6 +12,7 @@ import Workers from './pages/Workers';
 import ReviewDetail from './pages/ReviewDetail';
 import GitHubCallback from './pages/GitHubCallback';
 import GitHubRepos from './pages/GitHubRepos';
+import Settings from './pages/Settings';
 import './styles/app.css';
 
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/reviews/:reviewId" element={<ProtectedRoute><ReviewDetail /></ProtectedRoute>} />
             <Route path="/github" element={<ProtectedRoute><GitHubRepos /></ProtectedRoute>} />
             <Route path="/workers" element={<ProtectedRoute><Workers /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
