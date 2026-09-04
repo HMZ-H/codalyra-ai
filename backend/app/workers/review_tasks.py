@@ -17,6 +17,21 @@ from app.validators.python_validator import run_python_checks
 logger = logging.getLogger(__name__)
 
 
+def _get_user_api_key(db, review_id: str) -> str | None:
+    review = db.get(Review, review_id)
+    if not review:
+        return None
+    from app.database.models.user import User
+    user = db.get(User, review.created_by_id)
+    if not user or not user.gemini_api_key_encrypted:
+        return None
+    try:
+        from app.core.encryption import decrypt_value
+        return decrypt_value(user.gemini_api_key_encrypted)
+    except Exception:
+        return None
+
+
 def _record_trajectory(db, run_id, seq, action_type, action_input, action_output, duration_ms=0):
     trajectory = Trajectory(
         run_id=run_id,
@@ -51,7 +66,8 @@ def run_specialist_review(self, run_id: str, review_id: str, agent_type: str, di
 
         _record_trajectory(db, run.id, 1, "static_analysis", f"Running static checks for {agent_type}", json.dumps({"findings_count": len(relevant_static)}))
 
-        llm = LLMClient()
+        user_key = _get_user_api_key(db, review_id)
+        llm = LLMClient(api_key=user_key)
         reviewer = AgentReviewer(llm)
         result = reviewer.run_specialist_agent(agent_type, diff_content, relevant_static if relevant_static else None)
 
@@ -164,7 +180,8 @@ def run_synthesis_review(self, run_id: str, review_id: str):
 
         _record_trajectory(db, run.id, 1, "collect_findings", "Collecting specialist findings", json.dumps({k: len(v.get("findings", [])) for k, v in specialist_results.items()}))
 
-        llm = LLMClient()
+        user_key = _get_user_api_key(db, review_id)
+        llm = LLMClient(api_key=user_key)
         reviewer = AgentReviewer(llm)
         diff_summary = review.diff_content[:3000]
         result = reviewer.run_synthesis_agent(specialist_results, diff_summary)
@@ -238,7 +255,8 @@ def run_baseline_review(self, run_id: str, review_id: str, diff_content: str):
 
         _record_trajectory(db, run.id, 1, "baseline_start", "Running single-prompt baseline review", "")
 
-        llm = LLMClient()
+        user_key = _get_user_api_key(db, review_id)
+        llm = LLMClient(api_key=user_key)
         reviewer = AgentReviewer(llm)
         result = reviewer.run_baseline(diff_content)
 
