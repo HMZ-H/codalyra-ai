@@ -10,6 +10,7 @@ from app.database.session import get_db
 from app.dependencies import get_current_active_user
 from app.database.models.user import User
 from app.database.models.trajectory import Trajectory
+from app.core.permissions import verify_run_owner
 
 router = APIRouter(prefix="/trajectories", tags=["trajectories"])
 
@@ -34,6 +35,7 @@ def get_trajectories_by_run(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> list[TrajectoryResponse]:
+    verify_run_owner(db, run_id, current_user.id)
     stmt = (
         select(Trajectory)
         .where(Trajectory.run_id == run_id)

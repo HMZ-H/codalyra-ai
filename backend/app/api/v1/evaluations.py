@@ -9,6 +9,7 @@ from app.dependencies import get_current_active_user
 from app.database.models.user import User
 from app.database.models.evaluation import Evaluation
 from app.schemas.evaluation import EvaluationResponse
+from app.core.permissions import verify_run_owner
 
 router = APIRouter(prefix="/evaluations", tags=["evaluations"])
 
@@ -19,5 +20,6 @@ def get_evaluation_by_run(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> EvaluationResponse | None:
+    verify_run_owner(db, run_id, current_user.id)
     stmt = select(Evaluation).where(Evaluation.run_id == run_id)
     return db.scalars(stmt).first()
