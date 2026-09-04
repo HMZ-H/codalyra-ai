@@ -4,10 +4,12 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 
+MAX_DIFF_SIZE = 50_000
+
 class ReviewCreate(BaseModel):
     project_id: uuid.UUID
     pr_title: str | None = None
-    diff_content: str = Field(min_length=1)
+    diff_content: str = Field(min_length=1, max_length=MAX_DIFF_SIZE)
 
 
 class ReviewResponse(BaseModel):
