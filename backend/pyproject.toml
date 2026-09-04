@@ -19,6 +19,7 @@ dependencies = [
     "openai>=2.53.0",
     "httpx>=0.28.0",
     "google-genai>=1.0.0",
+    "cryptography>=50.0.0",
 ]
 
 [project.optional-dependencies]
