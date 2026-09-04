@@ -86,3 +86,22 @@ class AuthService:
 
         jwt_token = create_access_token(subject=str(user.id))
         return Token(access_token=jwt_token)
+
+    async def connect_github(self, user: User, code: str) -> User:
+        token_data = await GitHubService.exchange_code_for_token(code)
+        access_token = token_data["access_token"]
+
+        gh_user = await GitHubService.get_github_user(access_token)
+        github_id = gh_user["id"]
+
+        existing = self.repo.get_by_github_id(github_id)
+        if existing and existing.id != user.id:
+            raise ConflictException("This GitHub account is already linked to another user")
+
+        self.repo.update(user, {
+            "github_id": github_id,
+            "github_username": gh_user["login"],
+            "github_token": access_token,
+            "avatar_url": gh_user.get("avatar_url") or user.avatar_url,
+        })
+        return user

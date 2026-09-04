@@ -31,6 +31,7 @@ export const auth = {
   login: (data) => client.post('/auth/login', data),
   me: () => client.get('/auth/me'),
   githubCallback: (code) => client.post('/auth/github/callback', { code }),
+  connectGithub: (code) => client.post('/auth/github/connect', { code }),
 };
 
 export const projects = {

@@ -48,3 +48,13 @@ async def github_callback(
 ) -> Token:
     service = AuthService(db)
     return await service.github_login(data.code)
+
+
+@router.post("/github/connect", response_model=UserResponse)
+async def connect_github(
+    data: GitHubCallbackRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    service = AuthService(db)
+    return await service.connect_github(current_user, data.code)

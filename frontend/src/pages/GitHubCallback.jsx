@@ -11,8 +11,15 @@ export default function GitHubCallback() {
 
   useEffect(() => {
     const code = searchParams.get('code');
+    const state = searchParams.get('state');
+
     if (!code) {
       setError('No authorization code received');
+      return;
+    }
+
+    if (state === 'connect') {
+      navigate(`/settings?github_code=${code}`, { replace: true });
       return;
     }
 
