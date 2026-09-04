@@ -9,6 +9,8 @@ from app.database.models.user import User
 from app.schemas.review import ReviewCreate, ReviewResponse, ReviewSummaryResponse
 from app.services.review_service import ReviewService
 from app.core.exceptions import NotFoundException
+from app.core.permissions import verify_project_owner, verify_review_owner
+from app.middleware.rate_limit import check_rate_limit
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
@@ -19,6 +21,8 @@ def create_review(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> ReviewResponse:
+    verify_project_owner(db, review_data.project_id, current_user.id)
+    check_rate_limit(str(current_user.id), action="review", max_requests=10)
     review = ReviewService.create_review(
         db=db,
         project_id=review_data.project_id,
@@ -37,6 +41,7 @@ def list_reviews(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> list[ReviewSummaryResponse]:
+    verify_project_owner(db, project_id, current_user.id)
     return ReviewService.list_reviews(db, project_id, skip, limit)
 
 
@@ -46,6 +51,7 @@ def get_review(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> ReviewResponse:
+    verify_review_owner(db, review_id, current_user.id)
     review = ReviewService.get_review(db, review_id)
     if not review:
         raise NotFoundException("Review not found")
@@ -58,6 +64,7 @@ def get_review_report(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> dict:
+    verify_review_owner(db, review_id, current_user.id)
     report = ReviewService.get_review_report(db, review_id)
     if not report:
         raise NotFoundException("Review not found")
