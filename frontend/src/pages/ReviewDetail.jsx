@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { reviews } from '../api/client';
+import client from '../api/client';
 import useReviewSocket from '../hooks/useReviewSocket';
 import {
   HiShieldCheck, HiLightningBolt, HiCode, HiBeaker,
   HiChevronDown, HiChevronRight, HiArrowLeft, HiFilter,
-  HiTerminal, HiDocumentText,
+  HiTerminal, HiDocumentText, HiDownload,
 } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 
@@ -262,6 +263,21 @@ export default function ReviewDetail() {
 
   const comparison = report?.baseline_comparison;
 
+  const handleExport = async () => {
+    try {
+      const res = await client.get(`/exports/reviews/${reviewId}`, { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `review-${reviewId}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Report downloaded');
+    } catch {
+      toast.error('Failed to export report');
+    }
+  };
+
   return (
     <div className="page">
       <div className="page-header">
@@ -272,6 +288,13 @@ export default function ReviewDetail() {
             <span className={`status-badge status-${liveStatus}`}>{liveStatus}</span>
             {wsConnected && <span className="ws-indicator" title="Live updates active" />}
           </div>
+        </div>
+        <div className="header-actions">
+          {liveStatus === 'completed' && (
+            <button className="btn btn-secondary" onClick={handleExport}>
+              <HiDownload /> Export Report
+            </button>
+          )}
         </div>
       </div>
 
