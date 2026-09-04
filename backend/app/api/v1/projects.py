@@ -39,6 +39,8 @@ def get_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> ProjectResponse:
+    from app.core.permissions import verify_project_owner
+    verify_project_owner(db, project_id, current_user.id)
     service = ProjectService(db)
     return service.get_project(project_id)
 
