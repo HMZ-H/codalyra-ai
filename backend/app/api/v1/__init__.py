@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1 import auth, evaluations, github, health, projects, repositories, reviews, runs, tasks, trajectories, users
+from app.api.v1 import auth, evaluations, github, health, projects, repositories, reviews, runs, settings, tasks, trajectories, users
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(health.router)
@@ -14,3 +14,4 @@ api_router.include_router(evaluations.router)
 api_router.include_router(trajectories.router)
 api_router.include_router(reviews.router)
 api_router.include_router(github.router)
+api_router.include_router(settings.router)
