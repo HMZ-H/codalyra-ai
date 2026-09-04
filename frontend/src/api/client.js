@@ -96,6 +96,14 @@ export const settings = {
   deleteApiKey: () => client.delete('/settings/api-keys'),
 };
 
+export const analytics = {
+  overview: () => client.get('/analytics/overview'),
+  reviews: (params) => client.get('/analytics/reviews', { params }),
+  scoreTrends: (params) => client.get('/analytics/score-trends', { params }),
+  categories: (params) => client.get('/analytics/categories', { params }),
+  agents: (params) => client.get('/analytics/agents', { params }),
+};
+
 export const health = {
   check: () => client.get('/health'),
   db: () => client.get('/health/db'),
