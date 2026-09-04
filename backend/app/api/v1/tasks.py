@@ -8,6 +8,7 @@ from app.dependencies import get_current_active_user
 from app.database.models.user import User
 from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate
 from app.services.task_service import TaskService
+from app.core.permissions import verify_project_owner, verify_task_owner
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -30,6 +31,7 @@ def list_tasks(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> list[TaskResponse]:
+    verify_project_owner(db, project_id, current_user.id)
     service = TaskService(db)
     return service.list_tasks(project_id, skip=skip, limit=limit)
 
@@ -40,6 +42,7 @@ def get_task(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> TaskResponse:
+    verify_task_owner(db, task_id, current_user.id)
     service = TaskService(db)
     return service.get_task(task_id)
 
