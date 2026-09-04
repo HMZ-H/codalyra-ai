@@ -8,6 +8,7 @@ from app.dependencies import get_current_active_user
 from app.database.models.user import User
 from app.schemas.repository import RepositoryCreate, RepositoryResponse, RepositoryUpdate
 from app.services.repository_service import RepositoryService
+from app.core.permissions import verify_project_owner, verify_repository_owner
 
 router = APIRouter(prefix="/repositories", tags=["repositories"])
 
@@ -30,6 +31,7 @@ def list_repositories(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> list[RepositoryResponse]:
+    verify_project_owner(db, project_id, current_user.id)
     service = RepositoryService(db)
     return service.list_repositories(project_id, skip=skip, limit=limit)
 
@@ -40,6 +42,7 @@ def get_repository(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> RepositoryResponse:
+    verify_repository_owner(db, repo_id, current_user.id)
     service = RepositoryService(db)
     return service.get_repository(repo_id)
 
