@@ -13,6 +13,8 @@ import ReviewDetail from './pages/ReviewDetail';
 import GitHubCallback from './pages/GitHubCallback';
 import GitHubRepos from './pages/GitHubRepos';
 import Settings from './pages/Settings';
+import Analytics from './pages/Analytics';
+import ReviewHistory from './pages/ReviewHistory';
 import './styles/app.css';
 
 export default function App() {
@@ -32,6 +34,8 @@ export default function App() {
             <Route path="/github" element={<ProtectedRoute><GitHubRepos /></ProtectedRoute>} />
             <Route path="/workers" element={<ProtectedRoute><Workers /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+            <Route path="/analytics/history" element={<ProtectedRoute><ReviewHistory /></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
