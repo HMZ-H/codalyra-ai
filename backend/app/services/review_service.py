@@ -10,6 +10,7 @@ from app.database.models.task import Task
 from app.database.models.agent_config import AgentConfig
 from app.repositories.review_repository import ReviewRepository
 from app.ai.analyzer import compare_findings
+from app.ai.fixer import AutoFixer
 
 logger = logging.getLogger(__name__)
 
@@ -156,3 +157,38 @@ class ReviewService:
             "agent_results": agent_results,
             "baseline_comparison": baseline_comparison,
         }
+
+    @staticmethod
+    def generate_auto_fixes(db: Session, review_id: uuid.UUID) -> list[dict]:
+        from app.database.models.user import User
+        from app.ai.client import LLMClient
+        from app.core.encryption import decrypt_value
+
+        review = db.get(Review, review_id)
+        if not review or review.status != "completed":
+            return []
+
+        findings = []
+        if review.metadata_ and isinstance(review.metadata_, dict):
+            findings = review.metadata_.get("synthesis_findings", [])
+        if not findings:
+            for run in review.runs:
+                if run.evaluation and run.evaluation.feedback:
+                    try:
+                        fb = json.loads(run.evaluation.feedback) if isinstance(run.evaluation.feedback, str) else run.evaluation.feedback
+                        findings.extend(fb.get("findings", []))
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+
+        user = db.get(User, review.created_by_id)
+        if not user or not user.gemini_api_key_encrypted:
+            return []
+
+        try:
+            api_key = decrypt_value(user.gemini_api_key_encrypted)
+        except Exception:
+            return []
+
+        llm = LLMClient(api_key=api_key)
+        fixer = AutoFixer(llm)
+        return fixer.generate_fixes(review.diff_content, findings)

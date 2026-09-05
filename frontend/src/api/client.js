@@ -79,6 +79,7 @@ export const reviews = {
   list: (projectId) => client.get(`/reviews/?project_id=${projectId}`),
   get: (id) => client.get(`/reviews/${id}`),
   report: (id) => client.get(`/reviews/${id}/report`),
+  autoFix: (id) => client.post(`/reviews/${id}/auto-fix`),
 };
 
 export const github = {

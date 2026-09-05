@@ -6,7 +6,7 @@ import useReviewSocket from '../hooks/useReviewSocket';
 import {
   HiShieldCheck, HiLightningBolt, HiCode, HiBeaker,
   HiChevronDown, HiChevronRight, HiArrowLeft, HiFilter,
-  HiTerminal, HiDocumentText, HiDownload,
+  HiTerminal, HiDocumentText, HiDownload, HiSparkles,
 } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 
@@ -188,6 +188,8 @@ export default function ReviewDetail() {
   const [filter, setFilter] = useState('all');
   const [expandedFiles, setExpandedFiles] = useState({});
   const [activeTab, setActiveTab] = useState('findings');
+  const [fixes, setFixes] = useState(null);
+  const [fixLoading, setFixLoading] = useState(false);
 
   const { state: wsState, connected: wsConnected } = useReviewSocket(reviewId);
 
@@ -263,6 +265,23 @@ export default function ReviewDetail() {
 
   const comparison = report?.baseline_comparison;
 
+  const handleAutoFix = async () => {
+    setFixLoading(true);
+    try {
+      const res = await reviews.autoFix(reviewId);
+      setFixes(res.data.fixes || []);
+      if (res.data.fixes?.length === 0) {
+        toast.error('No auto-fixes could be generated');
+      } else {
+        toast.success(`Generated ${res.data.fixes.length} fix suggestions`);
+      }
+    } catch {
+      toast.error('Failed to generate auto-fixes');
+    } finally {
+      setFixLoading(false);
+    }
+  };
+
   const handleExport = async () => {
     try {
       const res = await client.get(`/exports/reviews/${reviewId}`, { responseType: 'blob' });
@@ -291,9 +310,14 @@ export default function ReviewDetail() {
         </div>
         <div className="header-actions">
           {liveStatus === 'completed' && (
-            <button className="btn btn-secondary" onClick={handleExport}>
-              <HiDownload /> Export Report
-            </button>
+            <>
+              <button className="btn btn-accent" onClick={handleAutoFix} disabled={fixLoading}>
+                <HiSparkles /> {fixLoading ? 'Generating...' : 'Auto-Fix'}
+              </button>
+              <button className="btn btn-secondary" onClick={handleExport}>
+                <HiDownload /> Export Report
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -345,6 +369,11 @@ export default function ReviewDetail() {
         <button className={`review-tab ${activeTab === 'diff' ? 'active' : ''}`} onClick={() => setActiveTab('diff')}>
           Diff
         </button>
+        {fixes && fixes.length > 0 && (
+          <button className={`review-tab ${activeTab === 'fixes' ? 'active' : ''}`} onClick={() => setActiveTab('fixes')}>
+            Auto-Fixes ({fixes.length})
+          </button>
+        )}
         {comparison && (
           <button className={`review-tab ${activeTab === 'baseline' ? 'active' : ''}`} onClick={() => setActiveTab('baseline')}>
             Baseline Comparison
@@ -395,6 +424,36 @@ export default function ReviewDetail() {
       {/* Diff tab */}
       {activeTab === 'diff' && (
         <DiffViewer diffContent={review.diff_content} findings={findings} />
+      )}
+
+      {/* Auto-Fixes tab */}
+      {activeTab === 'fixes' && fixes && fixes.length > 0 && (
+        <div className="review-section">
+          <h2><HiSparkles style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />Suggested Fixes</h2>
+          {fixes.map((fix, i) => (
+            <div key={i} className="auto-fix-card">
+              <div className="fix-header">
+                <span className="finding-severity" style={{
+                  background: SEVERITY_COLORS[fix.severity]?.border || '#666',
+                  color: '#fff',
+                }}>{fix.severity}</span>
+                <span className="finding-category">{fix.category}</span>
+                <span className="finding-location">{fix.file}{fix.line ? `:${fix.line}` : ''}</span>
+              </div>
+              <p className="fix-explanation">{fix.explanation}</p>
+              <div className="fix-diff">
+                <div className="fix-code-block fix-original">
+                  <div className="fix-code-label">Before</div>
+                  <pre>{fix.original_code}</pre>
+                </div>
+                <div className="fix-code-block fix-corrected">
+                  <div className="fix-code-label">After</div>
+                  <pre>{fix.fixed_code}</pre>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Baseline tab */}
