@@ -1,0 +1,308 @@
+{
+  "performance-agent": {
+    "status": "completed",
+    "duration_seconds": 9.581376,
+    "findings_count": 0,
+    "summary": "No performance issues identified in the provided diff.",
+    "findings": [],
+    "steps": [
+      {
+        "sequence": 1,
+        "action_type": "static_analysis",
+        "action_input": "Running static checks for performance",
+        "action_output": "{\"findings_count\": 0}",
+        "duration_ms": 0
+      },
+      {
+        "sequence": 2,
+        "action_type": "llm_review",
+        "action_input": "Running performance agent via Gemini",
+        "action_output": "{\"findings_count\": 0, \"summary\": \"No performance issues identified in the provided diff.\"}",
+        "duration_ms": 6660
+      },
+      {
+        "sequence": 3,
+        "action_type": "merge_findings",
+        "action_input": "Merging static + LLM findings",
+        "action_output": "{\"total_findings\": 0}",
+        "duration_ms": 0
+      }
+    ]
+  },
+  "quality-agent": {
+    "status": "completed",
+    "duration_seconds": 12.542508,
+    "findings_count": 3,
+    "summary": "The pull request introduces severe security and code quality concerns in app.py, including hardcoded secrets, an unused import, and a SQL injection vulnerability resulting from string interpolation in database queries.",
+    "findings": [
+      {
+        "file": "app.py",
+        "line": 3,
+        "severity": "critical",
+        "category": "magic-strings",
+        "message": "Hardcoded secret key `SECRET` found in source code.",
+        "suggestion": "Store secrets in environment variables and retrieve them using `os.getenv('SECRET')`.",
+        "agent": "quality"
+      },
+      {
+        "file": "app.py",
+        "line": 6,
+        "severity": "critical",
+        "category": "sql-injection",
+        "message": "Constructing SQL queries using f-string string interpolation introduces severe SQL injection vulnerabilities.",
+        "suggestion": "Use parameterized queries, for example: `db.execute('SELECT * FROM users WHERE id = ?', (user_id,))`.",
+        "agent": "quality"
+      },
+      {
+        "file": "app.py",
+        "line": 1,
+        "severity": "info",
+        "category": "dead-code",
+        "message": "Unused import `os`.",
+        "suggestion": "Remove the unused `os` import.",
+        "agent": "quality"
+      }
+    ],
+    "steps": [
+      {
+        "sequence": 1,
+        "action_type": "static_analysis",
+        "action_input": "Running static checks for quality",
+        "action_output": "{\"findings_count\": 0}",
+        "duration_ms": 0
+      },
+      {
+        "sequence": 2,
+        "action_type": "llm_review",
+        "action_input": "Running quality agent via Gemini",
+        "action_output": "{\"findings_count\": 3, \"summary\": \"The pull request introduces severe security and code quality concerns in app.py, including hardcoded secrets, an unused import, and a SQL injection vulnerability resulting from string interpolation in database queries.\"}",
+        "duration_ms": 9540
+      },
+      {
+        "sequence": 3,
+        "action_type": "merge_findings",
+        "action_input": "Merging static + LLM findings",
+        "action_output": "{\"total_findings\": 3}",
+        "duration_ms": 0
+      }
+    ]
+  },
+  "logic-agent": {
+    "status": "completed",
+    "duration_seconds": 16.287534,
+    "findings_count": 3,
+    "summary": "The diff introduces critical SQL injection vulnerabilities via string formatting in database queries, a NameError due to an undefined `db` object, and a hardcoded secret key.",
+    "findings": [
+      {
+        "file": "app.py",
+        "line": 6,
+        "severity": "critical",
+        "category": "sql-injection",
+        "message": "SQL query built using f-string interpolation, creating a SQL injection vulnerability.",
+        "suggestion": "Use parameterized queries instead of string formatting, e.g., `db.execute('SELECT * FROM users WHERE id = ?', (user_id,))`.",
+        "agent": "logic"
+      },
+      {
+        "file": "app.py",
+        "line": 7,
+        "severity": "critical",
+        "category": "undefined-variable",
+        "message": "Variable `db` is referenced but not imported or defined anywhere in this module, which will cause a NameError when `get_user` is invoked.",
+        "suggestion": "Import or initialize `db` before referencing it in `get_user`.",
+        "agent": "logic"
+      },
+      {
+        "file": "app.py",
+        "line": 3,
+        "severity": "warning",
+        "category": "hardcoded-secret",
+        "message": "Hardcoded secret key found directly in the source code.",
+        "suggestion": "Retrieve sensitive credentials from environment variables using `os.getenv('SECRET')` or a configuration management system.",
+        "agent": "logic"
+      }
+    ],
+    "steps": [
+      {
+        "sequence": 1,
+        "action_type": "static_analysis",
+        "action_input": "Running static checks for logic",
+        "action_output": "{\"findings_count\": 0}",
+        "duration_ms": 0
+      },
+      {
+        "sequence": 2,
+        "action_type": "llm_review",
+        "action_input": "Running logic agent via Gemini",
+        "action_output": "{\"findings_count\": 3, \"summary\": \"The diff introduces critical SQL injection vulnerabilities via string formatting in database queries, a NameError due to an undefined `db` object, and a hardcoded secret key.\"}",
+        "duration_ms": 13270
+      },
+      {
+        "sequence": 3,
+        "action_type": "merge_findings",
+        "action_input": "Merging static + LLM findings",
+        "action_output": "{\"total_findings\": 3}",
+        "duration_ms": 0
+      }
+    ]
+  },
+  "baseline-agent": {
+    "status": "completed",
+    "duration_seconds": 10.941508,
+    "findings_count": 2,
+    "summary": "The diff introduces two critical security vulnerabilities in app.py: a hardcoded secret key and a SQL injection vulnerability caused by using string formatting for database queries.",
+    "findings": [
+      {
+        "file": "app.py",
+        "line": 3,
+        "severity": "critical",
+        "category": "hardcoded-secret",
+        "message": "Hardcoded secret key detected in source code.",
+        "suggestion": "Use environment variables to store secrets, e.g., os.environ.get('SECRET').",
+        "agent": "baseline"
+      },
+      {
+        "file": "app.py",
+        "line": 6,
+        "severity": "critical",
+        "category": "sql-injection",
+        "message": "SQL query is constructed using f-string string interpolation, exposing the application to SQL injection vulnerabilities.",
+        "suggestion": "Use parameterized queries, e.g., db.execute('SELECT * FROM users WHERE id = %s', (user_id,)).",
+        "agent": "baseline"
+      }
+    ],
+    "steps": [
+      {
+        "sequence": 1,
+        "action_type": "baseline_start",
+        "action_input": "Running single-prompt baseline review",
+        "action_output": "",
+        "duration_ms": 0
+      },
+      {
+        "sequence": 2,
+        "action_type": "baseline_complete",
+        "action_input": "Baseline review completed",
+        "action_output": "{\"findings_count\": 2}",
+        "duration_ms": 8580
+      }
+    ]
+  },
+  "security-agent": {
+    "status": "completed",
+    "duration_seconds": 25.684756,
+    "findings_count": 3,
+    "summary": "The audit identified two critical security vulnerabilities in app.py: a hardcoded secret key on line 3 and a SQL injection vulnerability on line 6 caused by unsafe dynamic string interpolation in a database query.",
+    "findings": [
+      {
+        "file": "app.py",
+        "line": 3,
+        "severity": "critical",
+        "category": "hardcoded-secret",
+        "message": "Hardcoded secret key assigned directly in source code.",
+        "suggestion": "Remove the hardcoded secret and load it from environment variables or a secret manager (e.g., os.environ.get('SECRET')).",
+        "agent": "security"
+      },
+      {
+        "file": "app.py",
+        "line": 6,
+        "severity": "critical",
+        "category": "sql-injection",
+        "message": "SQL query constructed using string formatting (f-string) with potentially untrusted input 'user_id', leading to SQL Injection.",
+        "suggestion": "Use parameterized queries instead of string concatenation, e.g., db.execute('SELECT * FROM users WHERE id = %s', (user_id,)).",
+        "agent": "security"
+      },
+      {
+        "file": "app.py",
+        "line": 7,
+        "severity": "critical",
+        "category": "hardcoded-secret",
+        "message": "Possible hardcoded secret or password",
+        "agent": "static-security",
+        "suggestion": null
+      }
+    ],
+    "steps": [
+      {
+        "sequence": 1,
+        "action_type": "static_analysis",
+        "action_input": "Running static checks for security",
+        "action_output": "{\"findings_count\": 1}",
+        "duration_ms": 0
+      },
+      {
+        "sequence": 2,
+        "action_type": "llm_review",
+        "action_input": "Running security agent via Gemini",
+        "action_output": "{\"findings_count\": 2, \"summary\": \"The audit identified two critical security vulnerabilities in app.py: a hardcoded secret key on line 3 and a SQL injection vulnerability on line 6 caused by unsafe dynamic string interpolation in a database query.\"}",
+        "duration_ms": 22680
+      },
+      {
+        "sequence": 3,
+        "action_type": "merge_findings",
+        "action_input": "Merging static + LLM findings",
+        "action_output": "{\"total_findings\": 3}",
+        "duration_ms": 0
+      }
+    ]
+  },
+  "synthesis-agent": {
+    "status": "completed",
+    "duration_seconds": 15.592763,
+    "findings_count": 4,
+    "summary": "The PR introduces severe critical issues in app.py: a hardcoded secret key, a SQL injection vulnerability due to unsafe string formatting in database queries, and a missing variable definition for 'db' that causes a runtime NameError. Additionally, an unused import ('os') was added.",
+    "findings": [
+      {
+        "file": "app.py",
+        "line": 3,
+        "severity": "critical",
+        "category": "hardcoded-secret",
+        "message": "Hardcoded secret key assigned directly in source code.",
+        "agent": "security",
+        "suggestion": "Remove the hardcoded secret and load it from environment variables or a secret manager (e.g., os.environ.get('SECRET'))."
+      },
+      {
+        "file": "app.py",
+        "line": 6,
+        "severity": "critical",
+        "category": "sql-injection",
+        "message": "SQL query constructed using string formatting (f-string) with potentially untrusted input 'user_id', leading to SQL Injection.",
+        "agent": "security",
+        "suggestion": "Use parameterized queries instead of string concatenation, e.g., db.execute('SELECT * FROM users WHERE id = %s', (user_id,))."
+      },
+      {
+        "file": "app.py",
+        "line": 7,
+        "severity": "critical",
+        "category": "undefined-variable",
+        "message": "Variable `db` is referenced but not imported or defined anywhere in this module, which will cause a NameError when `get_user` is invoked.",
+        "agent": "logic",
+        "suggestion": "Import or initialize `db` before referencing it in `get_user`."
+      },
+      {
+        "file": "app.py",
+        "line": 1,
+        "severity": "info",
+        "category": "dead-code",
+        "message": "Unused import `os`.",
+        "agent": "quality",
+        "suggestion": "Remove the unused `os` import."
+      }
+    ],
+    "steps": [
+      {
+        "sequence": 1,
+        "action_type": "collect_findings",
+        "action_input": "Collecting specialist findings",
+        "action_output": "{\"logic\": 3, \"security\": 3, \"performance\": 0, \"quality\": 3}",
+        "duration_ms": 0
+      },
+      {
+        "sequence": 2,
+        "action_type": "synthesis",
+        "action_input": "Running synthesis agent",
+        "action_output": "{\"findings_count\": 4, \"overall_score\": 30}",
+        "duration_ms": 10640
+      }
+    ]
+  }
+}
