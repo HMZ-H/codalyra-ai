@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -12,7 +13,6 @@ from app.ai.prompts import PROMPT_MAP
 from app.ai.providers import PROVIDER_MODELS
 from app.schemas.agent_config import (
     VALID_AGENT_TYPES,
-    AgentConfigCreate,
     AgentConfigUpdate,
     AgentConfigResponse,
     AgentConfigWithDefaults,
@@ -23,16 +23,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects/{project_id}/agents", tags=["agent-configs"])
 
 
-def _verify_project_owner(db: Session, project_id: str, user: User) -> Project:
+def _verify_project_owner(db: Session, project_id: uuid.UUID, user: User) -> Project:
     project = db.get(Project, project_id)
-    if not project or str(project.owner_id) != str(user.id):
+    if not project or project.owner_id != user.id:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
 
 
 @router.get("", response_model=list[AgentConfigWithDefaults])
 def list_agent_configs(
-    project_id: str,
+    project_id: uuid.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -60,7 +60,7 @@ def list_agent_configs(
 
 @router.put("/{agent_type}", response_model=AgentConfigResponse)
 def upsert_agent_config(
-    project_id: str,
+    project_id: uuid.UUID,
     agent_type: str,
     data: AgentConfigUpdate,
     db: Session = Depends(get_db),
@@ -106,7 +106,7 @@ def upsert_agent_config(
 
 @router.delete("/{agent_type}")
 def reset_agent_config(
-    project_id: str,
+    project_id: uuid.UUID,
     agent_type: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
