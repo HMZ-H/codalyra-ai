@@ -16,6 +16,7 @@ from app.validators.python_validator import run_python_checks
 from app.validators.javascript_validator import run_javascript_checks
 from app.validators.golang_validator import run_golang_checks
 from app.validators.detector import detect_languages
+from app.database.models.agent_config import AgentConfig
 
 logger = logging.getLogger(__name__)
 
@@ -75,10 +76,23 @@ def run_specialist_review(self, run_id: str, review_id: str, agent_type: str, di
 
         _record_trajectory(db, run.id, 1, "static_analysis", f"Running static checks for {agent_type} (langs: {', '.join(languages) or 'unknown'})", json.dumps({"findings_count": len(relevant_static)}))
 
+        review = db.get(Review, review_id)
+        agent_cfg = None
+        if review:
+            agent_cfg = db.query(AgentConfig).filter(
+                AgentConfig.project_id == review.project_id,
+                AgentConfig.agent_type == agent_type,
+            ).first()
+
         user_key = _get_user_api_key(db, review_id)
         llm = LLMClient(api_key=user_key)
         reviewer = AgentReviewer(llm)
-        result = reviewer.run_specialist_agent(agent_type, diff_content, relevant_static if relevant_static else None)
+        result = reviewer.run_specialist_agent(
+            agent_type, diff_content,
+            relevant_static if relevant_static else None,
+            custom_prompt=agent_cfg.custom_prompt if agent_cfg else None,
+            temperature=agent_cfg.temperature if agent_cfg else 0.2,
+        )
 
         _record_trajectory(
             db, run.id, 2, "llm_review",
@@ -140,7 +154,7 @@ def check_and_trigger_synthesis(review_id: str):
             Run.agent_name.in_(["logic-agent", "security-agent", "performance-agent", "quality-agent"]),
         ).all()
 
-        if all(r.status == "completed" for r in specialist_runs):
+        if all(r.status in ("completed", "skipped") for r in specialist_runs):
             synthesis_run = db.query(Run).filter(
                 Run.review_id == review_id,
                 Run.agent_name == "synthesis-agent",

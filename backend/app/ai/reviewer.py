@@ -11,8 +11,8 @@ class AgentReviewer:
     def __init__(self, llm_client: LLMClient):
         self.llm = llm_client
 
-    def run_specialist_agent(self, agent_type: str, diff_context: str, static_findings: list | None = None) -> dict:
-        system_prompt = PROMPT_MAP[agent_type]
+    def run_specialist_agent(self, agent_type: str, diff_context: str, static_findings: list | None = None, custom_prompt: str | None = None, temperature: float = 0.2) -> dict:
+        system_prompt = custom_prompt if custom_prompt else PROMPT_MAP[agent_type]
 
         user_message = f"Code diff to review:\n\n{diff_context}"
 
@@ -24,7 +24,7 @@ class AgentReviewer:
                 + json.dumps(static_findings, indent=2)
             )
 
-        result = self.llm.chat_json(system_prompt, user_message)
+        result = self.llm.chat_json(system_prompt, user_message, temperature=temperature)
 
         data = result.get("data", {})
         findings = data.get("findings", [])

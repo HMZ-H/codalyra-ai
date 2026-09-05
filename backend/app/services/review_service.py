@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.database.models.review import Review
 from app.database.models.run import Run
 from app.database.models.task import Task
+from app.database.models.agent_config import AgentConfig
 from app.repositories.review_repository import ReviewRepository
 from app.ai.analyzer import compare_findings
 
@@ -59,6 +60,14 @@ class ReviewService:
         for run in runs:
             db.refresh(run)
 
+        disabled_agents = {
+            cfg.agent_type
+            for cfg in db.query(AgentConfig).filter(
+                AgentConfig.project_id == project_id,
+                AgentConfig.is_enabled == False,
+            ).all()
+        }
+
         from app.workers.review_tasks import run_specialist_review, run_baseline_review
         for run in runs:
             if run.agent_name == "synthesis-agent":
@@ -67,6 +76,10 @@ class ReviewService:
                 run_baseline_review.delay(str(run.id), str(review.id), diff_content)
             else:
                 agent_type = run.agent_name.replace("-agent", "")
+                if agent_type in disabled_agents:
+                    run.status = "skipped"
+                    db.commit()
+                    continue
                 run_specialist_review.delay(str(run.id), str(review.id), agent_type, diff_content)
 
         return review
