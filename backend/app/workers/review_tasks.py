@@ -18,6 +18,8 @@ from app.validators.javascript_validator import run_javascript_checks
 from app.validators.golang_validator import run_golang_checks
 from app.validators.detector import detect_languages
 from app.database.models.agent_config import AgentConfig
+from app.database.models.custom_rule import CustomRule
+from app.validators.custom_rules import run_custom_rules
 
 logger = logging.getLogger(__name__)
 
@@ -83,11 +85,26 @@ def run_specialist_review(self, run_id: str, review_id: str, agent_type: str, di
             static_findings.extend(run_javascript_checks(diff_content))
         if "go" in languages:
             static_findings.extend(run_golang_checks(diff_content))
+
+        review = db.get(Review, review_id)
+        if review:
+            custom_rules_list = db.query(CustomRule).filter(
+                CustomRule.project_id == review.project_id,
+                CustomRule.is_enabled == True,
+            ).all()
+            if custom_rules_list:
+                rule_dicts = [
+                    {"name": r.name, "pattern": r.pattern, "severity": r.severity,
+                     "category": r.category, "message": r.message, "suggestion": r.suggestion,
+                     "file_pattern": r.file_pattern, "is_enabled": r.is_enabled}
+                    for r in custom_rules_list
+                ]
+                static_findings.extend(run_custom_rules(diff_content, rule_dicts))
+
         relevant_static = [f for f in static_findings if _is_relevant_to_agent(f, agent_type)]
 
         _record_trajectory(db, run.id, 1, "static_analysis", f"Running static checks for {agent_type} (langs: {', '.join(languages) or 'unknown'})", json.dumps({"findings_count": len(relevant_static)}))
 
-        review = db.get(Review, review_id)
         agent_cfg = None
         if review:
             agent_cfg = db.query(AgentConfig).filter(

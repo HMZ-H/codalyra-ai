@@ -9,6 +9,7 @@ from app.database.models.evaluation import Evaluation
 from app.database.models.review import Review
 from app.database.models.agent_config import AgentConfig
 from app.database.models.team import Team, TeamMember
+from app.database.models.custom_rule import CustomRule
 
 __all__ = [
     "User",
@@ -23,4 +24,5 @@ __all__ = [
     "AgentConfig",
     "Team",
     "TeamMember",
+    "CustomRule",
 ]

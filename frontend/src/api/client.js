@@ -125,6 +125,13 @@ export const teams = {
   removeMember: (teamId, memberId) => client.delete(`/teams/${teamId}/members/${memberId}`),
 };
 
+export const customRules = {
+  list: (projectId) => client.get(`/projects/${projectId}/rules`),
+  create: (projectId, data) => client.post(`/projects/${projectId}/rules`, data),
+  update: (projectId, ruleId, data) => client.put(`/projects/${projectId}/rules/${ruleId}`, data),
+  delete: (projectId, ruleId) => client.delete(`/projects/${projectId}/rules/${ruleId}`),
+};
+
 export const health = {
   check: () => client.get('/health'),
   db: () => client.get('/health/db'),

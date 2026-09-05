@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1 import agent_configs, analytics, auth, evaluations, exports, github, health, projects, repositories, reviews, runs, settings, tasks, teams, trajectories, users
+from app.api.v1 import agent_configs, analytics, auth, custom_rules, evaluations, exports, github, health, projects, repositories, reviews, runs, settings, tasks, teams, trajectories, users
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(health.router)
@@ -19,3 +19,4 @@ api_router.include_router(analytics.router)
 api_router.include_router(exports.router)
 api_router.include_router(agent_configs.router)
 api_router.include_router(teams.router)
+api_router.include_router(custom_rules.router)
