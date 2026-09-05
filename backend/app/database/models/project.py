@@ -15,6 +15,8 @@ class Project(Base):
     description: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     owner_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("users.id"), nullable=False, index=True)
     team_id: Mapped[uuid.UUID | None] = mapped_column(sa.ForeignKey("teams.id"), nullable=True, index=True)
+    slack_webhook_url: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
+    discord_webhook_url: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(sa.Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now())
     updated_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), onupdate=sa.func.now())

@@ -264,6 +264,24 @@ def run_synthesis_review(self, run_id: str, review_id: str):
         run.duration_seconds = (run.completed_at - run.started_at).total_seconds()
         db.commit()
 
+        try:
+            from app.services.notification_service import notify_review_complete
+            from app.database.models.project import Project
+            project = db.get(Project, review.project_id)
+            notify_review_complete(
+                {
+                    "review_id": review_id,
+                    "pr_title": review.pr_title,
+                    "overall_score": result.get("overall_score"),
+                    "summary": result.get("summary", ""),
+                    "findings": synthesis_findings,
+                },
+                slack_url=getattr(project, "slack_webhook_url", None),
+                discord_url=getattr(project, "discord_webhook_url", None),
+            )
+        except Exception:
+            logger.warning("Notification dispatch failed", exc_info=True)
+
         return {"review_id": review_id, "overall_score": result.get("overall_score"), "findings_count": len(synthesis_findings)}
 
     except Exception as exc:
