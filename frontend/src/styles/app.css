@@ -2316,3 +2316,40 @@ tr:hover td { background: var(--bg-panel); }
   font-size: 0.85rem;
   font-weight: 600;
 }
+
+/* Finding Feedback */
+.finding-feedback-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.btn-feedback-accept {
+  background: rgba(34, 197, 94, 0.12) !important;
+  color: #22c55e !important;
+  border: 1px solid rgba(34, 197, 94, 0.25) !important;
+}
+.btn-feedback-accept:hover { background: rgba(34, 197, 94, 0.25) !important; }
+.btn-feedback-dismiss {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+.btn-feedback-dismiss:hover { background: rgba(239, 68, 68, 0.25) !important; }
+.btn-feedback-fp {
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #f59e0b !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+.btn-feedback-fp:hover { background: rgba(245, 158, 11, 0.25) !important; }
+.feedback-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  margin-left: auto;
+}
+.feedback-accept { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+.feedback-dismiss { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.feedback-false_positive { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }

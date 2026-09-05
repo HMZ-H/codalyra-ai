@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { reviews } from '../api/client';
+import { reviews, feedback as feedbackApi } from '../api/client';
 import client from '../api/client';
 import useReviewSocket from '../hooks/useReviewSocket';
 import {
@@ -151,11 +151,14 @@ function DiffViewer({ diffContent, findings }) {
   );
 }
 
-function FindingCard({ finding }) {
+function FindingCard({ finding, feedbackStatus, onFeedback }) {
   const sev = SEVERITY_COLORS[finding.severity] || SEVERITY_COLORS.info;
 
   return (
-    <div className="review-finding" style={{ borderLeftColor: sev.border, background: sev.bg }}>
+    <div className="review-finding" style={{
+      borderLeftColor: sev.border, background: sev.bg,
+      opacity: feedbackStatus === 'dismiss' || feedbackStatus === 'false_positive' ? 0.5 : 1,
+    }}>
       <div className="finding-header">
         <span className="finding-severity" style={{ background: sev.border, color: '#fff' }}>
           {sev.label}
@@ -166,6 +169,11 @@ function FindingCard({ finding }) {
             {AGENT_META[finding.agent]?.label || finding.agent}
           </span>
         )}
+        {feedbackStatus && (
+          <span className={`feedback-badge feedback-${feedbackStatus}`}>
+            {feedbackStatus === 'accept' ? '✓ Accepted' : feedbackStatus === 'dismiss' ? '✗ Dismissed' : '⚠ False Positive'}
+          </span>
+        )}
       </div>
       <div className="finding-location">
         {finding.file}{finding.line ? `:${finding.line}` : ''}
@@ -174,6 +182,13 @@ function FindingCard({ finding }) {
       {finding.suggestion && (
         <div className="finding-suggestion">
           <strong>Fix:</strong> {finding.suggestion}
+        </div>
+      )}
+      {onFeedback && !feedbackStatus && (
+        <div className="finding-feedback-actions">
+          <button className="btn btn-sm btn-feedback-accept" onClick={() => onFeedback(finding, 'accept')}>✓ Accept</button>
+          <button className="btn btn-sm btn-feedback-dismiss" onClick={() => onFeedback(finding, 'dismiss')}>✗ Dismiss</button>
+          <button className="btn btn-sm btn-feedback-fp" onClick={() => onFeedback(finding, 'false_positive')}>False Positive</button>
         </div>
       )}
     </div>
@@ -190,6 +205,7 @@ export default function ReviewDetail() {
   const [activeTab, setActiveTab] = useState('findings');
   const [fixes, setFixes] = useState(null);
   const [fixLoading, setFixLoading] = useState(false);
+  const [feedbackMap, setFeedbackMap] = useState({});
 
   const { state: wsState, connected: wsConnected } = useReviewSocket(reviewId);
 
@@ -201,6 +217,12 @@ export default function ReviewDetail() {
       ]);
       setReview(reviewRes.data);
       if (reportRes?.data) setReport(reportRes.data);
+
+      feedbackApi.getForReview(reviewId).then((res) => {
+        const map = {};
+        (res.data || []).forEach((fb) => { map[fb.finding_hash] = fb.action; });
+        setFeedbackMap(map);
+      }).catch(() => {});
     } catch {
       toast.error('Failed to load review');
     } finally {
@@ -264,6 +286,19 @@ export default function ReviewDetail() {
   };
 
   const comparison = report?.baseline_comparison;
+
+  const handleFeedback = async (finding, action) => {
+    try {
+      await feedbackApi.submit(reviewId, { finding, action });
+      const key = `${finding.file}:${finding.line}:${finding.category}:${finding.message}`;
+      setFeedbackMap((prev) => ({ ...prev, [key]: action }));
+      toast.success(action === 'accept' ? 'Finding accepted' : 'Finding dismissed');
+    } catch {
+      toast.error('Failed to save feedback');
+    }
+  };
+
+  const getFeedbackKey = (f) => `${f.file}:${f.line}:${f.category}:${f.message}`;
 
   const handleAutoFix = async () => {
     setFixLoading(true);
@@ -407,7 +442,14 @@ export default function ReviewDetail() {
               </button>
               {expandedFiles[file] !== false && (
                 <div className="finding-file-list">
-                  {fileFindings.map((f, i) => <FindingCard key={i} finding={f} />)}
+                  {fileFindings.map((f, i) => (
+                    <FindingCard
+                      key={i}
+                      finding={f}
+                      feedbackStatus={feedbackMap[getFeedbackKey(f)]}
+                      onFeedback={liveStatus === 'completed' ? handleFeedback : null}
+                    />
+                  ))}
                 </div>
               )}
             </div>

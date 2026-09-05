@@ -125,6 +125,12 @@ export const teams = {
   removeMember: (teamId, memberId) => client.delete(`/teams/${teamId}/members/${memberId}`),
 };
 
+export const feedback = {
+  submit: (reviewId, data) => client.post(`/feedback/reviews/${reviewId}`, data),
+  getForReview: (reviewId) => client.get(`/feedback/reviews/${reviewId}`),
+  getStats: (projectId) => client.get(`/feedback/projects/${projectId}/stats`),
+};
+
 export const customRules = {
   list: (projectId) => client.get(`/projects/${projectId}/rules`),
   create: (projectId, data) => client.post(`/projects/${projectId}/rules`, data),
