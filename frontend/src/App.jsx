@@ -16,6 +16,7 @@ import Settings from './pages/Settings';
 import Analytics from './pages/Analytics';
 import ReviewHistory from './pages/ReviewHistory';
 import AgentConfig from './pages/AgentConfig';
+import Teams from './pages/Teams';
 import './styles/app.css';
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
             <Route path="/analytics/history" element={<ProtectedRoute><ReviewHistory /></ProtectedRoute>} />
             <Route path="/projects/:projectId/agents" element={<ProtectedRoute><AgentConfig /></ProtectedRoute>} />
+            <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>

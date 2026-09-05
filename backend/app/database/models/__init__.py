@@ -8,6 +8,7 @@ from app.database.models.trajectory import Trajectory
 from app.database.models.evaluation import Evaluation
 from app.database.models.review import Review
 from app.database.models.agent_config import AgentConfig
+from app.database.models.team import Team, TeamMember
 
 __all__ = [
     "User",
@@ -20,4 +21,6 @@ __all__ = [
     "Evaluation",
     "Review",
     "AgentConfig",
+    "Team",
+    "TeamMember",
 ]

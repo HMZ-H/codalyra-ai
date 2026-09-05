@@ -2283,3 +2283,36 @@ tr:hover td { background: var(--bg-panel); }
 @media (max-width: 700px) {
   .fix-diff { grid-template-columns: 1fr; }
 }
+
+/* Team Members */
+.team-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.team-member-row:last-child { border-bottom: none; }
+.team-member-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.team-member-name { font-weight: 500; }
+.team-member-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.role-select {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+.role-badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+}

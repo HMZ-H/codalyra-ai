@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { HiOutlineLogout, HiOutlineViewGrid, HiServer, HiCode, HiSun, HiMoon, HiCog, HiChartBar } from 'react-icons/hi';
+import { HiOutlineLogout, HiOutlineViewGrid, HiServer, HiCode, HiSun, HiMoon, HiCog, HiChartBar, HiUserGroup } from 'react-icons/hi';
 import useTheme from '../hooks/useTheme';
 
 export default function Navbar() {
@@ -31,6 +31,9 @@ export default function Navbar() {
               </Link>
               <Link to="/analytics" className="nav-link">
                 <HiChartBar /> Analytics
+              </Link>
+              <Link to="/teams" className="nav-link">
+                <HiUserGroup /> Teams
               </Link>
               <Link to="/workers" className="nav-link">
                 <HiServer /> Workers

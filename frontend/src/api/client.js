@@ -113,6 +113,18 @@ export const agentConfigs = {
   providers: (projectId) => client.get(`/projects/${projectId}/agents/providers`),
 };
 
+export const teams = {
+  list: () => client.get('/teams/'),
+  get: (id) => client.get(`/teams/${id}`),
+  create: (data) => client.post('/teams/', data),
+  update: (id, data) => client.put(`/teams/${id}`, data),
+  delete: (id) => client.delete(`/teams/${id}`),
+  listMembers: (id) => client.get(`/teams/${id}/members`),
+  addMember: (id, data) => client.post(`/teams/${id}/members`, data),
+  updateMember: (teamId, memberId, data) => client.put(`/teams/${teamId}/members/${memberId}`, data),
+  removeMember: (teamId, memberId) => client.delete(`/teams/${teamId}/members/${memberId}`),
+};
+
 export const health = {
   check: () => client.get('/health'),
   db: () => client.get('/health/db'),
