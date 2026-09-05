@@ -104,6 +104,12 @@ export const analytics = {
   agents: (params) => client.get('/analytics/agents', { params }),
 };
 
+export const agentConfigs = {
+  list: (projectId) => client.get(`/projects/${projectId}/agents`),
+  update: (projectId, agentType, data) => client.put(`/projects/${projectId}/agents/${agentType}`, data),
+  reset: (projectId, agentType) => client.delete(`/projects/${projectId}/agents/${agentType}`),
+};
+
 export const health = {
   check: () => client.get('/health'),
   db: () => client.get('/health/db'),

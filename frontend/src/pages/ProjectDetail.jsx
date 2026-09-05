@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { projects as projectsApi, repositories as reposApi, tasks as tasksApi } from '../api/client';
-import { HiPlus, HiCode, HiClipboardList, HiArrowLeft, HiPencil, HiTrash, HiX } from 'react-icons/hi';
+import { HiPlus, HiCode, HiClipboardList, HiArrowLeft, HiPencil, HiTrash, HiX, HiCog } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 
 function CreateRepoModal({ projectId, onClose, onCreated }) {
@@ -233,6 +233,11 @@ export default function ProjectDetail() {
               <p className="text-muted">{project.description || 'No description'}</p>
             </>
           )}
+        </div>
+        <div className="header-actions">
+          <button className="btn btn-secondary" onClick={() => navigate(`/projects/${id}/agents`)}>
+            <HiCog /> Agent Config
+          </button>
         </div>
       </div>
 

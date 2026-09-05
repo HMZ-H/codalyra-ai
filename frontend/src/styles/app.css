@@ -2171,3 +2171,48 @@ tr:hover td { background: var(--bg-panel); }
   .history-toolbar { flex-direction: column; }
   .filter-panel { flex-direction: column; }
 }
+
+/* Agent Config */
+.agent-config-list { display: flex; flex-direction: column; gap: 1rem; }
+.agent-config-card { transition: opacity 0.2s; }
+.agent-config-card.agent-disabled { opacity: 0.6; }
+.agent-config-title { display: flex; align-items: center; gap: 0.75rem; }
+.agent-status-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.agent-status-dot.active { background: var(--accent); }
+.agent-status-dot.inactive { background: var(--text-muted); }
+.agent-config-editor {
+  margin-top: 1rem; padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.agent-config-field { margin-bottom: 1rem; }
+.agent-config-field label {
+  display: block; font-size: 0.85rem; font-weight: 500;
+  margin-bottom: 0.4rem; color: var(--text-secondary);
+}
+.agent-prompt-textarea {
+  width: 100%; min-height: 200px; padding: 0.75rem;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+  line-height: 1.5; resize: vertical;
+}
+.agent-prompt-textarea:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(44, 140, 124, 0.15);
+}
+.agent-temp-slider {
+  width: 100%; accent-color: var(--accent); cursor: pointer;
+}
+.agent-temp-labels {
+  display: flex; justify-content: space-between;
+  font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;
+}
+.agent-config-actions {
+  display: flex; gap: 0.5rem; flex-wrap: wrap;
+}
+.tag-accent {
+  background: rgba(44, 140, 124, 0.15); color: var(--accent);
+  border: 1px solid rgba(44, 140, 124, 0.3);
+}
