@@ -2209,6 +2209,12 @@ tr:hover td { background: var(--bg-panel); }
   display: flex; justify-content: space-between;
   font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;
 }
+.agent-config-row {
+  display: flex; gap: 1rem; margin-bottom: 1rem;
+}
+.agent-config-row select {
+  width: 100%;
+}
 .agent-config-actions {
   display: flex; gap: 0.5rem; flex-wrap: wrap;
 }

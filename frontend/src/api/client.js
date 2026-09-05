@@ -92,8 +92,9 @@ export const github = {
 
 export const settings = {
   getApiKeyStatus: () => client.get('/settings/api-keys'),
-  updateApiKey: (gemini_api_key) => client.put('/settings/api-keys', { gemini_api_key }),
+  updateApiKey: (data) => client.put('/settings/api-keys', typeof data === 'string' ? { gemini_api_key: data } : data),
   deleteApiKey: () => client.delete('/settings/api-keys'),
+  deleteProviderKey: (provider) => client.delete(`/settings/api-keys/${provider}`),
 };
 
 export const analytics = {
@@ -108,6 +109,7 @@ export const agentConfigs = {
   list: (projectId) => client.get(`/projects/${projectId}/agents`),
   update: (projectId, agentType, data) => client.put(`/projects/${projectId}/agents/${agentType}`, data),
   reset: (projectId, agentType) => client.delete(`/projects/${projectId}/agents/${agentType}`),
+  providers: (projectId) => client.get(`/projects/${projectId}/agents/providers`),
 };
 
 export const health = {
