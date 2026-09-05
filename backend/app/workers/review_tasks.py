@@ -13,6 +13,9 @@ from app.ai.reviewer import AgentReviewer
 from app.ai.analyzer import deduplicate_findings, score_findings, sort_findings
 from app.validators.security_validator import run_security_checks
 from app.validators.python_validator import run_python_checks
+from app.validators.javascript_validator import run_javascript_checks
+from app.validators.golang_validator import run_golang_checks
+from app.validators.detector import detect_languages
 
 logger = logging.getLogger(__name__)
 
@@ -59,12 +62,18 @@ def run_specialist_review(self, run_id: str, review_id: str, agent_type: str, di
         run.started_at = datetime.now(timezone.utc)
         db.commit()
 
+        languages = detect_languages(diff_content)
         static_findings = []
         static_findings.extend(run_security_checks(diff_content))
-        static_findings.extend(run_python_checks(diff_content))
+        if "python" in languages:
+            static_findings.extend(run_python_checks(diff_content))
+        if "javascript" in languages or "typescript" in languages:
+            static_findings.extend(run_javascript_checks(diff_content))
+        if "go" in languages:
+            static_findings.extend(run_golang_checks(diff_content))
         relevant_static = [f for f in static_findings if _is_relevant_to_agent(f, agent_type)]
 
-        _record_trajectory(db, run.id, 1, "static_analysis", f"Running static checks for {agent_type}", json.dumps({"findings_count": len(relevant_static)}))
+        _record_trajectory(db, run.id, 1, "static_analysis", f"Running static checks for {agent_type} (langs: {', '.join(languages) or 'unknown'})", json.dumps({"findings_count": len(relevant_static)}))
 
         user_key = _get_user_api_key(db, review_id)
         llm = LLMClient(api_key=user_key)
@@ -310,10 +319,27 @@ def run_baseline_review(self, run_id: str, review_id: str, diff_content: str):
 
 def _is_relevant_to_agent(finding: dict, agent_type: str) -> bool:
     category = finding.get("category", "").lower()
-    security_categories = {"hardcoded-api-key", "hardcoded-secret", "aws-access-key", "github-token", "openai-key", "slack-token", "dangerous-eval", "dangerous-exec", "command-injection", "shell-injection", "insecure-deserialization", "insecure-yaml", "xss-risk"}
-    quality_categories = {"bare-except", "wildcard-import", "todo-comment", "print-statement"}
-    performance_categories = set()
-    logic_categories = {"mutable-default", "assert-in-prod"}
+    security_categories = {
+        "hardcoded-api-key", "hardcoded-secret", "aws-access-key", "github-token",
+        "openai-key", "slack-token", "dangerous-eval", "dangerous-exec",
+        "command-injection", "shell-injection", "insecure-deserialization", "insecure-yaml",
+        "xss-risk", "xss-innerHTML", "xss-document-write", "xss-dangerouslySetInnerHTML",
+        "dangerous-new-function", "string-timeout", "dynamic-import",
+        "sql-concatenation", "sql-sprintf", "prototype-pollution",
+    }
+    quality_categories = {
+        "bare-except", "wildcard-import", "todo-comment", "print-statement",
+        "console-log", "var-usage", "loose-equality", "loose-inequality",
+        "typescript-any", "ts-ignore", "ts-nocheck", "missing-async",
+        "fmt-print", "empty-interface", "env-without-default",
+    }
+    performance_categories = {
+        "goroutine-leak", "goroutine-in-loop", "time-sleep", "mutex-without-lock",
+    }
+    logic_categories = {
+        "mutable-default", "assert-in-prod",
+        "unchecked-error", "unclosed-resource", "log-fatal", "panic-usage",
+    }
 
     agent_categories = {
         "security": security_categories,
