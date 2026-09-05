@@ -2,13 +2,14 @@ import json
 import logging
 
 from app.ai.client import LLMClient
+from app.ai.providers import LLMProvider
 from app.ai.prompts import PROMPT_MAP
 
 logger = logging.getLogger(__name__)
 
 
 class AgentReviewer:
-    def __init__(self, llm_client: LLMClient):
+    def __init__(self, llm_client: LLMClient | LLMProvider):
         self.llm = llm_client
 
     def run_specialist_agent(self, agent_type: str, diff_context: str, static_findings: list | None = None, custom_prompt: str | None = None, temperature: float = 0.2) -> dict:

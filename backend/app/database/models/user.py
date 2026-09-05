@@ -20,6 +20,8 @@ class User(Base):
     github_username: Mapped[str | None] = mapped_column(sa.String(100), nullable=True)
     github_token: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
     gemini_api_key_encrypted: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    openai_api_key_encrypted: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    anthropic_api_key_encrypted: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(sa.Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(sa.Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now())

@@ -10,6 +10,7 @@ from app.database.models.trajectory import Trajectory
 from app.database.models.evaluation import Evaluation
 from app.ai.client import LLMClient
 from app.ai.reviewer import AgentReviewer
+from app.ai.providers import create_provider
 from app.ai.analyzer import deduplicate_findings, score_findings, sort_findings
 from app.validators.security_validator import run_security_checks
 from app.validators.python_validator import run_python_checks
@@ -21,17 +22,27 @@ from app.database.models.agent_config import AgentConfig
 logger = logging.getLogger(__name__)
 
 
-def _get_user_api_key(db, review_id: str) -> str | None:
+def _get_user_api_key(db, review_id: str, provider: str = "gemini") -> str | None:
     review = db.get(Review, review_id)
     if not review:
         return None
     from app.database.models.user import User
     user = db.get(User, review.created_by_id)
-    if not user or not user.gemini_api_key_encrypted:
+    if not user:
+        return None
+
+    key_fields = {
+        "gemini": "gemini_api_key_encrypted",
+        "openai": "openai_api_key_encrypted",
+        "anthropic": "anthropic_api_key_encrypted",
+    }
+    field = key_fields.get(provider, "gemini_api_key_encrypted")
+    encrypted = getattr(user, field, None)
+    if not encrypted:
         return None
     try:
         from app.core.encryption import decrypt_value
-        return decrypt_value(user.gemini_api_key_encrypted)
+        return decrypt_value(encrypted)
     except Exception:
         return None
 
@@ -84,8 +95,16 @@ def run_specialist_review(self, run_id: str, review_id: str, agent_type: str, di
                 AgentConfig.agent_type == agent_type,
             ).first()
 
-        user_key = _get_user_api_key(db, review_id)
-        llm = LLMClient(api_key=user_key)
+        provider_name = (agent_cfg.provider if agent_cfg and agent_cfg.provider else "gemini")
+        model_name = (agent_cfg.model_name if agent_cfg and agent_cfg.model_name else None)
+        user_key = _get_user_api_key(db, review_id, provider=provider_name)
+
+        if provider_name != "gemini" and user_key:
+            llm = create_provider(provider_name, api_key=user_key, model=model_name)
+        else:
+            gemini_key = _get_user_api_key(db, review_id, provider="gemini")
+            llm = LLMClient(api_key=gemini_key)
+
         reviewer = AgentReviewer(llm)
         result = reviewer.run_specialist_agent(
             agent_type, diff_content,
@@ -96,7 +115,7 @@ def run_specialist_review(self, run_id: str, review_id: str, agent_type: str, di
 
         _record_trajectory(
             db, run.id, 2, "llm_review",
-            f"Running {agent_type} agent via Gemini",
+            f"Running {agent_type} agent via {provider_name}",
             json.dumps({"findings_count": len(result.get("findings", [])), "summary": result.get("summary", "")[:500]}),
             duration_ms=int(result.get("duration_seconds", 0) * 1000),
         )

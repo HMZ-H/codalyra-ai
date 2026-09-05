@@ -18,6 +18,8 @@ class AgentConfig(Base):
     agent_type: Mapped[str] = mapped_column(sa.String(50), nullable=False)
     custom_prompt: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     temperature: Mapped[float] = mapped_column(sa.Float, default=0.2)
+    provider: Mapped[str | None] = mapped_column(sa.String(50), nullable=True)
+    model_name: Mapped[str | None] = mapped_column(sa.String(100), nullable=True)
     is_enabled: Mapped[bool] = mapped_column(sa.Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), server_default=sa.func.now())
     updated_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), onupdate=sa.func.now())
