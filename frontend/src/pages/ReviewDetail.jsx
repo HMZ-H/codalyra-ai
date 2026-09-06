@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { reviews } from '../api/client';
+import { reviews, feedback as feedbackApi } from '../api/client';
+import client from '../api/client';
 import useReviewSocket from '../hooks/useReviewSocket';
 import {
   HiShieldCheck, HiLightningBolt, HiCode, HiBeaker,
   HiChevronDown, HiChevronRight, HiArrowLeft, HiFilter,
-  HiTerminal, HiDocumentText,
+  HiTerminal, HiDocumentText, HiDownload, HiSparkles,
 } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 
@@ -150,11 +151,14 @@ function DiffViewer({ diffContent, findings }) {
   );
 }
 
-function FindingCard({ finding }) {
+function FindingCard({ finding, feedbackStatus, onFeedback }) {
   const sev = SEVERITY_COLORS[finding.severity] || SEVERITY_COLORS.info;
 
   return (
-    <div className="review-finding" style={{ borderLeftColor: sev.border, background: sev.bg }}>
+    <div className="review-finding" style={{
+      borderLeftColor: sev.border, background: sev.bg,
+      opacity: feedbackStatus === 'dismiss' || feedbackStatus === 'false_positive' ? 0.5 : 1,
+    }}>
       <div className="finding-header">
         <span className="finding-severity" style={{ background: sev.border, color: '#fff' }}>
           {sev.label}
@@ -165,6 +169,11 @@ function FindingCard({ finding }) {
             {AGENT_META[finding.agent]?.label || finding.agent}
           </span>
         )}
+        {feedbackStatus && (
+          <span className={`feedback-badge feedback-${feedbackStatus}`}>
+            {feedbackStatus === 'accept' ? '✓ Accepted' : feedbackStatus === 'dismiss' ? '✗ Dismissed' : '⚠ False Positive'}
+          </span>
+        )}
       </div>
       <div className="finding-location">
         {finding.file}{finding.line ? `:${finding.line}` : ''}
@@ -173,6 +182,13 @@ function FindingCard({ finding }) {
       {finding.suggestion && (
         <div className="finding-suggestion">
           <strong>Fix:</strong> {finding.suggestion}
+        </div>
+      )}
+      {onFeedback && !feedbackStatus && (
+        <div className="finding-feedback-actions">
+          <button className="btn btn-sm btn-feedback-accept" onClick={() => onFeedback(finding, 'accept')}>✓ Accept</button>
+          <button className="btn btn-sm btn-feedback-dismiss" onClick={() => onFeedback(finding, 'dismiss')}>✗ Dismiss</button>
+          <button className="btn btn-sm btn-feedback-fp" onClick={() => onFeedback(finding, 'false_positive')}>False Positive</button>
         </div>
       )}
     </div>
@@ -187,6 +203,9 @@ export default function ReviewDetail() {
   const [filter, setFilter] = useState('all');
   const [expandedFiles, setExpandedFiles] = useState({});
   const [activeTab, setActiveTab] = useState('findings');
+  const [fixes, setFixes] = useState(null);
+  const [fixLoading, setFixLoading] = useState(false);
+  const [feedbackMap, setFeedbackMap] = useState({});
 
   const { state: wsState, connected: wsConnected } = useReviewSocket(reviewId);
 
@@ -198,6 +217,12 @@ export default function ReviewDetail() {
       ]);
       setReview(reviewRes.data);
       if (reportRes?.data) setReport(reportRes.data);
+
+      feedbackApi.getForReview(reviewId).then((res) => {
+        const map = {};
+        (res.data || []).forEach((fb) => { map[fb.finding_hash] = fb.action; });
+        setFeedbackMap(map);
+      }).catch(() => {});
     } catch {
       toast.error('Failed to load review');
     } finally {
@@ -262,6 +287,51 @@ export default function ReviewDetail() {
 
   const comparison = report?.baseline_comparison;
 
+  const handleFeedback = async (finding, action) => {
+    try {
+      await feedbackApi.submit(reviewId, { finding, action });
+      const key = `${finding.file}:${finding.line}:${finding.category}:${finding.message}`;
+      setFeedbackMap((prev) => ({ ...prev, [key]: action }));
+      toast.success(action === 'accept' ? 'Finding accepted' : 'Finding dismissed');
+    } catch {
+      toast.error('Failed to save feedback');
+    }
+  };
+
+  const getFeedbackKey = (f) => `${f.file}:${f.line}:${f.category}:${f.message}`;
+
+  const handleAutoFix = async () => {
+    setFixLoading(true);
+    try {
+      const res = await reviews.autoFix(reviewId);
+      setFixes(res.data.fixes || []);
+      if (res.data.fixes?.length === 0) {
+        toast.error('No auto-fixes could be generated');
+      } else {
+        toast.success(`Generated ${res.data.fixes.length} fix suggestions`);
+      }
+    } catch {
+      toast.error('Failed to generate auto-fixes');
+    } finally {
+      setFixLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const res = await client.get(`/exports/reviews/${reviewId}`, { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `review-${reviewId}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Report downloaded');
+    } catch {
+      toast.error('Failed to export report');
+    }
+  };
+
   return (
     <div className="page">
       <div className="page-header">
@@ -272,6 +342,18 @@ export default function ReviewDetail() {
             <span className={`status-badge status-${liveStatus}`}>{liveStatus}</span>
             {wsConnected && <span className="ws-indicator" title="Live updates active" />}
           </div>
+        </div>
+        <div className="header-actions">
+          {liveStatus === 'completed' && (
+            <>
+              <button className="btn btn-accent" onClick={handleAutoFix} disabled={fixLoading}>
+                <HiSparkles /> {fixLoading ? 'Generating...' : 'Auto-Fix'}
+              </button>
+              <button className="btn btn-secondary" onClick={handleExport}>
+                <HiDownload /> Export Report
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -322,6 +404,11 @@ export default function ReviewDetail() {
         <button className={`review-tab ${activeTab === 'diff' ? 'active' : ''}`} onClick={() => setActiveTab('diff')}>
           Diff
         </button>
+        {fixes && fixes.length > 0 && (
+          <button className={`review-tab ${activeTab === 'fixes' ? 'active' : ''}`} onClick={() => setActiveTab('fixes')}>
+            Auto-Fixes ({fixes.length})
+          </button>
+        )}
         {comparison && (
           <button className={`review-tab ${activeTab === 'baseline' ? 'active' : ''}`} onClick={() => setActiveTab('baseline')}>
             Baseline Comparison
@@ -355,7 +442,14 @@ export default function ReviewDetail() {
               </button>
               {expandedFiles[file] !== false && (
                 <div className="finding-file-list">
-                  {fileFindings.map((f, i) => <FindingCard key={i} finding={f} />)}
+                  {fileFindings.map((f, i) => (
+                    <FindingCard
+                      key={i}
+                      finding={f}
+                      feedbackStatus={feedbackMap[getFeedbackKey(f)]}
+                      onFeedback={liveStatus === 'completed' ? handleFeedback : null}
+                    />
+                  ))}
                 </div>
               )}
             </div>
@@ -372,6 +466,36 @@ export default function ReviewDetail() {
       {/* Diff tab */}
       {activeTab === 'diff' && (
         <DiffViewer diffContent={review.diff_content} findings={findings} />
+      )}
+
+      {/* Auto-Fixes tab */}
+      {activeTab === 'fixes' && fixes && fixes.length > 0 && (
+        <div className="review-section">
+          <h2><HiSparkles style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />Suggested Fixes</h2>
+          {fixes.map((fix, i) => (
+            <div key={i} className="auto-fix-card">
+              <div className="fix-header">
+                <span className="finding-severity" style={{
+                  background: SEVERITY_COLORS[fix.severity]?.border || '#666',
+                  color: '#fff',
+                }}>{fix.severity}</span>
+                <span className="finding-category">{fix.category}</span>
+                <span className="finding-location">{fix.file}{fix.line ? `:${fix.line}` : ''}</span>
+              </div>
+              <p className="fix-explanation">{fix.explanation}</p>
+              <div className="fix-diff">
+                <div className="fix-code-block fix-original">
+                  <div className="fix-code-label">Before</div>
+                  <pre>{fix.original_code}</pre>
+                </div>
+                <div className="fix-code-block fix-corrected">
+                  <div className="fix-code-label">After</div>
+                  <pre>{fix.fixed_code}</pre>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Baseline tab */}

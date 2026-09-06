@@ -40,13 +40,19 @@ export function AuthProvider({ children }) {
     return me.data;
   };
 
+  const refreshUser = async () => {
+    const me = await auth.me();
+    setUser(me.data);
+    return me.data;
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, loginWithGithub, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, loginWithGithub, refreshUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -16,6 +16,8 @@ class ProjectCreate(ProjectBase):
 class ProjectUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = None
+    slack_webhook_url: str | None = None
+    discord_webhook_url: str | None = None
 
 
 class ProjectResponse(ProjectBase):
@@ -23,6 +25,9 @@ class ProjectResponse(ProjectBase):
 
     id: uuid.UUID
     owner_id: uuid.UUID
+    team_id: uuid.UUID | None = None
+    slack_webhook_url: str | None = None
+    discord_webhook_url: str | None = None
     is_active: bool
     created_at: datetime
     updated_at: datetime | None = None

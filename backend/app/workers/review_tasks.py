@@ -10,24 +10,41 @@ from app.database.models.trajectory import Trajectory
 from app.database.models.evaluation import Evaluation
 from app.ai.client import LLMClient
 from app.ai.reviewer import AgentReviewer
+from app.ai.providers import create_provider
 from app.ai.analyzer import deduplicate_findings, score_findings, sort_findings
 from app.validators.security_validator import run_security_checks
 from app.validators.python_validator import run_python_checks
+from app.validators.javascript_validator import run_javascript_checks
+from app.validators.golang_validator import run_golang_checks
+from app.validators.detector import detect_languages
+from app.database.models.agent_config import AgentConfig
+from app.database.models.custom_rule import CustomRule
+from app.validators.custom_rules import run_custom_rules
 
 logger = logging.getLogger(__name__)
 
 
-def _get_user_api_key(db, review_id: str) -> str | None:
+def _get_user_api_key(db, review_id: str, provider: str = "gemini") -> str | None:
     review = db.get(Review, review_id)
     if not review:
         return None
     from app.database.models.user import User
     user = db.get(User, review.created_by_id)
-    if not user or not user.gemini_api_key_encrypted:
+    if not user:
+        return None
+
+    key_fields = {
+        "gemini": "gemini_api_key_encrypted",
+        "openai": "openai_api_key_encrypted",
+        "anthropic": "anthropic_api_key_encrypted",
+    }
+    field = key_fields.get(provider, "gemini_api_key_encrypted")
+    encrypted = getattr(user, field, None)
+    if not encrypted:
         return None
     try:
         from app.core.encryption import decrypt_value
-        return decrypt_value(user.gemini_api_key_encrypted)
+        return decrypt_value(encrypted)
     except Exception:
         return None
 
@@ -59,21 +76,63 @@ def run_specialist_review(self, run_id: str, review_id: str, agent_type: str, di
         run.started_at = datetime.now(timezone.utc)
         db.commit()
 
+        languages = detect_languages(diff_content)
         static_findings = []
         static_findings.extend(run_security_checks(diff_content))
-        static_findings.extend(run_python_checks(diff_content))
+        if "python" in languages:
+            static_findings.extend(run_python_checks(diff_content))
+        if "javascript" in languages or "typescript" in languages:
+            static_findings.extend(run_javascript_checks(diff_content))
+        if "go" in languages:
+            static_findings.extend(run_golang_checks(diff_content))
+
+        review = db.get(Review, review_id)
+        if review:
+            custom_rules_list = db.query(CustomRule).filter(
+                CustomRule.project_id == review.project_id,
+                CustomRule.is_enabled == True,
+            ).all()
+            if custom_rules_list:
+                rule_dicts = [
+                    {"name": r.name, "pattern": r.pattern, "severity": r.severity,
+                     "category": r.category, "message": r.message, "suggestion": r.suggestion,
+                     "file_pattern": r.file_pattern, "is_enabled": r.is_enabled}
+                    for r in custom_rules_list
+                ]
+                static_findings.extend(run_custom_rules(diff_content, rule_dicts))
+
         relevant_static = [f for f in static_findings if _is_relevant_to_agent(f, agent_type)]
 
-        _record_trajectory(db, run.id, 1, "static_analysis", f"Running static checks for {agent_type}", json.dumps({"findings_count": len(relevant_static)}))
+        _record_trajectory(db, run.id, 1, "static_analysis", f"Running static checks for {agent_type} (langs: {', '.join(languages) or 'unknown'})", json.dumps({"findings_count": len(relevant_static)}))
 
-        user_key = _get_user_api_key(db, review_id)
-        llm = LLMClient(api_key=user_key)
+        agent_cfg = None
+        if review:
+            agent_cfg = db.query(AgentConfig).filter(
+                AgentConfig.project_id == review.project_id,
+                AgentConfig.agent_type == agent_type,
+            ).first()
+
+        provider_name = (agent_cfg.provider if agent_cfg and agent_cfg.provider else "gemini")
+        model_name = (agent_cfg.model_name if agent_cfg and agent_cfg.model_name else None)
+        user_key = _get_user_api_key(db, review_id, provider=provider_name)
+
+        if provider_name != "gemini" and user_key:
+            llm = create_provider(provider_name, api_key=user_key, model=model_name)
+        else:
+            gemini_key = _get_user_api_key(db, review_id, provider="gemini")
+            llm = LLMClient(api_key=gemini_key)
+
         reviewer = AgentReviewer(llm)
-        result = reviewer.run_specialist_agent(agent_type, diff_content, relevant_static if relevant_static else None)
+        result = reviewer.run_specialist_agent(
+            agent_type, diff_content,
+            relevant_static if relevant_static else None,
+            custom_prompt=agent_cfg.custom_prompt if agent_cfg else None,
+            temperature=agent_cfg.temperature if agent_cfg else 0.2,
+        )
 
         _record_trajectory(
             db, run.id, 2, "llm_review",
-            f"Running {agent_type} agent via Gemini",
+            f"Running {agent_type} agent via {provider_name}",
             json.dumps({"findings_count": len(result.get("findings", [])), "summary": result.get("summary", "")[:500]}),
             duration_ms=int(result.get("duration_seconds", 0) * 1000),
         )
@@ -131,7 +190,7 @@ def check_and_trigger_synthesis(review_id: str):
             Run.agent_name.in_(["logic-agent", "security-agent", "performance-agent", "quality-agent"]),
         ).all()
 
-        if all(r.status == "completed" for r in specialist_runs):
+        if all(r.status in ("completed", "skipped") for r in specialist_runs):
             synthesis_run = db.query(Run).filter(
                 Run.review_id == review_id,
                 Run.agent_name == "synthesis-agent",
@@ -222,6 +281,24 @@ def run_synthesis_review(self, run_id: str, review_id: str):
         run.duration_seconds = (run.completed_at - run.started_at).total_seconds()
         db.commit()
 
+        try:
+            from app.services.notification_service import notify_review_complete
+            from app.database.models.project import Project
+            project = db.get(Project, review.project_id)
+            notify_review_complete(
+                {
+                    "review_id": review_id,
+                    "pr_title": review.pr_title,
+                    "overall_score": result.get("overall_score"),
+                    "summary": result.get("summary", ""),
+                    "findings": synthesis_findings,
+                },
+                slack_url=getattr(project, "slack_webhook_url", None),
+                discord_url=getattr(project, "discord_webhook_url", None),
+            )
+        except Exception:
+            logger.warning("Notification dispatch failed", exc_info=True)
+
         return {"review_id": review_id, "overall_score": result.get("overall_score"), "findings_count": len(synthesis_findings)}
 
     except Exception as exc:
@@ -310,10 +387,27 @@ def run_baseline_review(self, run_id: str, review_id: str, diff_content: str):
 
 def _is_relevant_to_agent(finding: dict, agent_type: str) -> bool:
     category = finding.get("category", "").lower()
-    security_categories = {"hardcoded-api-key", "hardcoded-secret", "aws-access-key", "github-token", "openai-key", "slack-token", "dangerous-eval", "dangerous-exec", "command-injection", "shell-injection", "insecure-deserialization", "insecure-yaml", "xss-risk"}
-    quality_categories = {"bare-except", "wildcard-import", "todo-comment", "print-statement"}
-    performance_categories = set()
-    logic_categories = {"mutable-default", "assert-in-prod"}
+    security_categories = {
+        "hardcoded-api-key", "hardcoded-secret", "aws-access-key", "github-token",
+        "openai-key", "slack-token", "dangerous-eval", "dangerous-exec",
+        "command-injection", "shell-injection", "insecure-deserialization", "insecure-yaml",
+        "xss-risk", "xss-innerHTML", "xss-document-write", "xss-dangerouslySetInnerHTML",
+        "dangerous-new-function", "string-timeout", "dynamic-import",
+        "sql-concatenation", "sql-sprintf", "prototype-pollution",
+    }
+    quality_categories = {
+        "bare-except", "wildcard-import", "todo-comment", "print-statement",
+        "console-log", "var-usage", "loose-equality", "loose-inequality",
+        "typescript-any", "ts-ignore", "ts-nocheck", "missing-async",
+        "fmt-print", "empty-interface", "env-without-default",
+    }
+    performance_categories = {
+        "goroutine-leak", "goroutine-in-loop", "time-sleep", "mutex-without-lock",
+    }
+    logic_categories = {
+        "mutable-default", "assert-in-prod",
+        "unchecked-error", "unclosed-resource", "log-fatal", "panic-usage",
+    }
 
     agent_categories = {
         "security": security_categories,

@@ -31,6 +31,7 @@ export const auth = {
   login: (data) => client.post('/auth/login', data),
   me: () => client.get('/auth/me'),
   githubCallback: (code) => client.post('/auth/github/callback', { code }),
+  connectGithub: (code) => client.post('/auth/github/connect', { code }),
 };
 
 export const projects = {
@@ -78,6 +79,7 @@ export const reviews = {
   list: (projectId) => client.get(`/reviews/?project_id=${projectId}`),
   get: (id) => client.get(`/reviews/${id}`),
   report: (id) => client.get(`/reviews/${id}/report`),
+  autoFix: (id) => client.post(`/reviews/${id}/auto-fix`),
 };
 
 export const github = {
@@ -91,8 +93,49 @@ export const github = {
 
 export const settings = {
   getApiKeyStatus: () => client.get('/settings/api-keys'),
-  updateApiKey: (gemini_api_key) => client.put('/settings/api-keys', { gemini_api_key }),
+  updateApiKey: (data) => client.put('/settings/api-keys', typeof data === 'string' ? { gemini_api_key: data } : data),
   deleteApiKey: () => client.delete('/settings/api-keys'),
+  deleteProviderKey: (provider) => client.delete(`/settings/api-keys/${provider}`),
+};
+
+export const analytics = {
+  overview: () => client.get('/analytics/overview'),
+  reviews: (params) => client.get('/analytics/reviews', { params }),
+  scoreTrends: (params) => client.get('/analytics/score-trends', { params }),
+  categories: (params) => client.get('/analytics/categories', { params }),
+  agents: (params) => client.get('/analytics/agents', { params }),
+};
+
+export const agentConfigs = {
+  list: (projectId) => client.get(`/projects/${projectId}/agents`),
+  update: (projectId, agentType, data) => client.put(`/projects/${projectId}/agents/${agentType}`, data),
+  reset: (projectId, agentType) => client.delete(`/projects/${projectId}/agents/${agentType}`),
+  providers: (projectId) => client.get(`/projects/${projectId}/agents/providers`),
+};
+
+export const teams = {
+  list: () => client.get('/teams/'),
+  get: (id) => client.get(`/teams/${id}`),
+  create: (data) => client.post('/teams/', data),
+  update: (id, data) => client.put(`/teams/${id}`, data),
+  delete: (id) => client.delete(`/teams/${id}`),
+  listMembers: (id) => client.get(`/teams/${id}/members`),
+  addMember: (id, data) => client.post(`/teams/${id}/members`, data),
+  updateMember: (teamId, memberId, data) => client.put(`/teams/${teamId}/members/${memberId}`, data),
+  removeMember: (teamId, memberId) => client.delete(`/teams/${teamId}/members/${memberId}`),
+};
+
+export const feedback = {
+  submit: (reviewId, data) => client.post(`/feedback/reviews/${reviewId}`, data),
+  getForReview: (reviewId) => client.get(`/feedback/reviews/${reviewId}`),
+  getStats: (projectId) => client.get(`/feedback/projects/${projectId}/stats`),
+};
+
+export const customRules = {
+  list: (projectId) => client.get(`/projects/${projectId}/rules`),
+  create: (projectId, data) => client.post(`/projects/${projectId}/rules`, data),
+  update: (projectId, ruleId, data) => client.put(`/projects/${projectId}/rules/${ruleId}`, data),
+  delete: (projectId, ruleId) => client.delete(`/projects/${projectId}/rules/${ruleId}`),
 };
 
 export const health = {

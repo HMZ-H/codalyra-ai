@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     GITHUB_REDIRECT_URI: str = "http://localhost:5173/auth/github/callback"
     GITHUB_WEBHOOK_SECRET: str = ""
 
+    SLACK_WEBHOOK_URL: str = ""
+    DISCORD_WEBHOOK_URL: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -9,6 +11,8 @@ from app.database.models.user import User
 from app.schemas.auth import LoginRequest, Token, GitHubCallbackRequest
 from app.schemas.user import UserCreate, UserResponse
 from app.services.auth_service import AuthService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -47,4 +51,22 @@ async def github_callback(
     db: Session = Depends(get_db),
 ) -> Token:
     service = AuthService(db)
-    return await service.github_login(data.code)
+    try:
+        return await service.github_login(data.code)
+    except ValueError as e:
+        logger.error("GitHub login failed: %s", e)
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/github/connect", response_model=UserResponse)
+async def connect_github(
+    data: GitHubCallbackRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    service = AuthService(db)
+    try:
+        return await service.connect_github(current_user, data.code)
+    except ValueError as e:
+        logger.error("GitHub connect failed for user %s: %s", current_user.id, e)
+        raise HTTPException(status_code=400, detail=str(e))

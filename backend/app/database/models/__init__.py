@@ -7,6 +7,10 @@ from app.database.models.checkpoint import Checkpoint
 from app.database.models.trajectory import Trajectory
 from app.database.models.evaluation import Evaluation
 from app.database.models.review import Review
+from app.database.models.agent_config import AgentConfig
+from app.database.models.team import Team, TeamMember
+from app.database.models.custom_rule import CustomRule
+from app.database.models.finding_feedback import FindingFeedback
 
 __all__ = [
     "User",
@@ -18,4 +22,9 @@ __all__ = [
     "Trajectory",
     "Evaluation",
     "Review",
+    "AgentConfig",
+    "Team",
+    "TeamMember",
+    "CustomRule",
+    "FindingFeedback",
 ]

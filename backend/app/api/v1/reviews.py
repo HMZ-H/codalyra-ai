@@ -69,3 +69,14 @@ def get_review_report(
     if not report:
         raise NotFoundException("Review not found")
     return report
+
+
+@router.post("/{review_id}/auto-fix")
+def generate_auto_fixes(
+    review_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> dict:
+    verify_review_owner(db, review_id, current_user.id)
+    fixes = ReviewService.generate_auto_fixes(db, review_id)
+    return {"fixes": fixes}
