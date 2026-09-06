@@ -1,6 +1,5 @@
 import re
 
-
 JS_TS_PATTERNS = [
     (r'\beval\s*\(', "dangerous-eval", "critical", "Use of eval() — potential code injection vulnerability"),
     (r'\.innerHTML\s*=', "xss-innerHTML", "critical", "Direct innerHTML assignment — potential XSS if user input is unsanitized"),

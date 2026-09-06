@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.permissions import verify_run_owner
+from app.database.models.evaluation import Evaluation
+from app.database.models.user import User
 from app.database.session import get_db
 from app.dependencies import get_current_active_user
-from app.database.models.user import User
-from app.database.models.evaluation import Evaluation
 from app.schemas.evaluation import EvaluationResponse
-from app.core.permissions import verify_run_owner
 
 router = APIRouter(prefix="/evaluations", tags=["evaluations"])
 

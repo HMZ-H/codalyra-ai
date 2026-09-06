@@ -4,16 +4,16 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.database.models.user import User
 from app.database.session import get_db
 from app.dependencies import get_current_active_user
-from app.database.models.user import User
 from app.schemas.analytics import (
-    AnalyticsOverview,
-    ReviewHistoryResponse,
-    ReviewHistoryItem,
-    ScoreTrendPoint,
-    CategoryBreakdownItem,
     AgentPerformanceItem,
+    AnalyticsOverview,
+    CategoryBreakdownItem,
+    ReviewHistoryItem,
+    ReviewHistoryResponse,
+    ScoreTrendPoint,
 )
 from app.services.analytics_service import AnalyticsService
 

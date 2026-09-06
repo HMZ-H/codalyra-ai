@@ -4,10 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import ForbiddenException, NotFoundException
 from app.database.models.project import Project
+from app.database.models.repository import Repository
 from app.database.models.review import Review
 from app.database.models.run import Run
 from app.database.models.task import Task
-from app.database.models.repository import Repository
 
 
 def verify_project_owner(db: Session, project_id: uuid.UUID, user_id: uuid.UUID) -> Project:

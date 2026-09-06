@@ -3,13 +3,13 @@ import json
 import logging
 import uuid
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
-from app.database.session import SessionLocal
 from app.database.models.review import Review
 from app.database.models.run import Run
 from app.database.models.trajectory import Trajectory
+from app.database.session import SessionLocal
 
 logger = logging.getLogger(__name__)
 

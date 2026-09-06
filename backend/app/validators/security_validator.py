@@ -1,6 +1,5 @@
 import re
 
-
 SECRET_PATTERNS = [
     (r'(?:api[_-]?key|apikey)\s*[=:]\s*["\'][A-Za-z0-9_\-]{16,}["\']', "hardcoded-api-key", "Possible hardcoded API key"),
     (r'(?:secret|token|password|passwd|pwd)\s*[=:]\s*["\'][^"\']{8,}["\']', "hardcoded-secret", "Possible hardcoded secret or password"),

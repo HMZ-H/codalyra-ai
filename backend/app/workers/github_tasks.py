@@ -1,5 +1,5 @@
-from app.workers.celery_app import celery_app
 from app.services.github_service import GitHubService
+from app.workers.celery_app import celery_app
 
 
 @celery_app.task(bind=True, max_retries=3)

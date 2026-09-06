@@ -15,11 +15,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from app.ai.analyzer import compare_findings, deduplicate_findings, score_findings, sort_findings
 from app.ai.client import LLMClient
 from app.ai.reviewer import AgentReviewer
-from app.ai.analyzer import deduplicate_findings, score_findings, sort_findings, compare_findings
-from app.validators.security_validator import run_security_checks
 from app.validators.python_validator import run_python_checks
+from app.validators.security_validator import run_security_checks
 
 SAMPLE_DIR = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "sample_diffs"
 
@@ -72,7 +72,11 @@ def run_baseline(reviewer: AgentReviewer, diff_content: str) -> dict:
 def _is_relevant(finding, agent_type):
     cat = finding.get("category", "").lower()
     mapping = {
-        "security": {"hardcoded-api-key", "hardcoded-secret", "aws-access-key", "github-token", "openai-key", "dangerous-eval", "dangerous-exec", "command-injection", "shell-injection", "insecure-deserialization", "xss-risk"},
+        "security": {
+            "hardcoded-api-key", "hardcoded-secret", "aws-access-key", "github-token", "openai-key",
+            "dangerous-eval", "dangerous-exec", "command-injection", "shell-injection",
+            "insecure-deserialization", "xss-risk",
+        },
         "quality": {"bare-except", "wildcard-import", "todo-comment", "print-statement"},
         "logic": {"mutable-default", "assert-in-prod"},
         "performance": set(),
@@ -125,7 +129,8 @@ def main():
         }
         results.append(row)
 
-        print(f"{row['agent']['findings_count']:<16} {row['baseline']['findings_count']:<18} {row['agent']['score']:<12.0f} {row['baseline']['score']:<14.0f} {row['agent']['duration']:<12.1f} {row['baseline']['duration']:.1f}s")
+        a, b = row['agent'], row['baseline']
+        print(f"{a['findings_count']:<16} {b['findings_count']:<18} {a['score']:<12.0f} {b['score']:<14.0f} {a['duration']:<12.1f} {b['duration']:.1f}s")
 
     print("\n" + "=" * 110)
     print("\nSUMMARY")

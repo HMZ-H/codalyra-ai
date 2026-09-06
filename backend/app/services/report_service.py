@@ -3,9 +3,9 @@ import logging
 
 from sqlalchemy.orm import Session
 
+from app.ai.analyzer import compare_findings, score_findings, sort_findings
 from app.database.models.review import Review
 from app.database.models.run import Run
-from app.ai.analyzer import compare_findings, score_findings, sort_findings
 
 logger = logging.getLogger(__name__)
 

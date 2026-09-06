@@ -1,15 +1,15 @@
-import uuid
 import logging
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_current_user
-from app.database.session import get_db
-from app.database.models.user import User
-from app.database.models.project import Project
 from app.database.models.custom_rule import CustomRule
-from app.schemas.custom_rule import CustomRuleCreate, CustomRuleUpdate, CustomRuleResponse
+from app.database.models.project import Project
+from app.database.models.user import User
+from app.database.session import get_db
+from app.dependencies import get_current_user
+from app.schemas.custom_rule import CustomRuleCreate, CustomRuleResponse, CustomRuleUpdate
 
 logger = logging.getLogger(__name__)
 

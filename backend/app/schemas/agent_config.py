@@ -3,7 +3,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 VALID_AGENT_TYPES = {"logic", "security", "performance", "quality"}
 
 

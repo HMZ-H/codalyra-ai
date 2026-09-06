@@ -1,14 +1,14 @@
-import uuid
 import json
+import uuid
 from datetime import datetime, timedelta
 
-from sqlalchemy import select, func, case, and_
+from sqlalchemy import and_, case, func, select
 from sqlalchemy.orm import Session, joinedload
 
-from app.database.models.review import Review
-from app.database.models.run import Run
 from app.database.models.evaluation import Evaluation
 from app.database.models.project import Project
+from app.database.models.review import Review
+from app.database.models.run import Run
 
 
 class AnalyticsService:

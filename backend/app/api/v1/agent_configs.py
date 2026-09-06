@@ -4,17 +4,17 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_current_user
-from app.database.session import get_db
-from app.database.models.user import User
-from app.database.models.project import Project
-from app.database.models.agent_config import AgentConfig
 from app.ai.prompts import PROMPT_MAP
 from app.ai.providers import PROVIDER_MODELS
+from app.database.models.agent_config import AgentConfig
+from app.database.models.project import Project
+from app.database.models.user import User
+from app.database.session import get_db
+from app.dependencies import get_current_user
 from app.schemas.agent_config import (
     VALID_AGENT_TYPES,
-    AgentConfigUpdate,
     AgentConfigResponse,
+    AgentConfigUpdate,
     AgentConfigWithDefaults,
 )
 

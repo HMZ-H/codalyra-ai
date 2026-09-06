@@ -3,7 +3,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 MAX_DIFF_SIZE = 50_000
 
 class ReviewCreate(BaseModel):
