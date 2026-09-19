@@ -214,6 +214,10 @@ async def github_webhook(
 ):
     body = await request.body()
 
+    MAX_WEBHOOK_PAYLOAD = 5 * 1024 * 1024  # 5 MB
+    if len(body) > MAX_WEBHOOK_PAYLOAD:
+        raise HTTPException(413, "Webhook payload too large")
+
     if not settings.GITHUB_WEBHOOK_SECRET:
         logger.warning("GITHUB_WEBHOOK_SECRET is not set — webhook signature validation disabled")
     else:
@@ -228,6 +232,9 @@ async def github_webhook(
             raise HTTPException(403, "Invalid signature")
 
     payload = json.loads(body)
+
+    if x_github_event == "ping":
+        return {"status": "pong"}
 
     if x_github_event == "pull_request" and payload.get("action") in ("opened", "synchronize"):
         pr = payload["pull_request"]
