@@ -2,24 +2,24 @@ import json
 import logging
 from datetime import datetime, timezone
 
-from app.workers.celery_app import celery_app
-from app.database.session import SessionLocal
-from app.database.models.run import Run
-from app.database.models.review import Review
-from app.database.models.trajectory import Trajectory
-from app.database.models.evaluation import Evaluation
-from app.ai.client import LLMClient
-from app.ai.reviewer import AgentReviewer
-from app.ai.providers import create_provider
 from app.ai.analyzer import deduplicate_findings, score_findings, sort_findings
-from app.validators.security_validator import run_security_checks
-from app.validators.python_validator import run_python_checks
-from app.validators.javascript_validator import run_javascript_checks
-from app.validators.golang_validator import run_golang_checks
-from app.validators.detector import detect_languages
+from app.ai.client import LLMClient
+from app.ai.providers import create_provider
+from app.ai.reviewer import AgentReviewer
 from app.database.models.agent_config import AgentConfig
 from app.database.models.custom_rule import CustomRule
+from app.database.models.evaluation import Evaluation
+from app.database.models.review import Review
+from app.database.models.run import Run
+from app.database.models.trajectory import Trajectory
+from app.database.session import SessionLocal
 from app.validators.custom_rules import run_custom_rules
+from app.validators.detector import detect_languages
+from app.validators.golang_validator import run_golang_checks
+from app.validators.javascript_validator import run_javascript_checks
+from app.validators.python_validator import run_python_checks
+from app.validators.security_validator import run_security_checks
+from app.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +103,12 @@ def run_specialist_review(self, run_id: str, review_id: str, agent_type: str, di
 
         relevant_static = [f for f in static_findings if _is_relevant_to_agent(f, agent_type)]
 
-        _record_trajectory(db, run.id, 1, "static_analysis", f"Running static checks for {agent_type} (langs: {', '.join(languages) or 'unknown'})", json.dumps({"findings_count": len(relevant_static)}))
+        lang_str = ', '.join(languages) or 'unknown'
+        _record_trajectory(
+            db, run.id, 1, "static_analysis",
+            f"Running static checks for {agent_type} (langs: {lang_str})",
+            json.dumps({"findings_count": len(relevant_static)}),
+        )
 
         agent_cfg = None
         if review:
@@ -282,8 +287,8 @@ def run_synthesis_review(self, run_id: str, review_id: str):
         db.commit()
 
         try:
-            from app.services.notification_service import notify_review_complete
             from app.database.models.project import Project
+            from app.services.notification_service import notify_review_complete
             project = db.get(Project, review.project_id)
             notify_review_complete(
                 {

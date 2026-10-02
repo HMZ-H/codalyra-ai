@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.core.encryption import decrypt_value, encrypt_value
+from app.database.models.user import User
 from app.database.session import get_db
 from app.dependencies import get_current_active_user
-from app.database.models.user import User
-from app.core.encryption import encrypt_value, decrypt_value
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 

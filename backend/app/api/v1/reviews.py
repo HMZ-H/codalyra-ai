@@ -3,14 +3,14 @@ import uuid
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db
-from app.dependencies import get_current_active_user
-from app.database.models.user import User
-from app.schemas.review import ReviewCreate, ReviewResponse, ReviewSummaryResponse
-from app.services.review_service import ReviewService
 from app.core.exceptions import NotFoundException
 from app.core.permissions import verify_project_owner, verify_review_owner
+from app.database.models.user import User
+from app.database.session import get_db
+from app.dependencies import get_current_active_user
 from app.middleware.rate_limit import check_rate_limit
+from app.schemas.review import ReviewCreate, ReviewResponse, ReviewSummaryResponse
+from app.services.review_service import ReviewService
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 

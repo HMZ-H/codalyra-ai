@@ -5,10 +5,10 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.database.models.user import User
 from app.database.session import get_db
 from app.dependencies import get_current_active_user
-from app.database.models.user import User
-from app.schemas.auth import LoginRequest, Token, GitHubCallbackRequest
+from app.schemas.auth import GitHubCallbackRequest, LoginRequest, Token
 from app.schemas.user import UserCreate, UserResponse
 from app.services.auth_service import AuthService
 

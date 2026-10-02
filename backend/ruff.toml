@@ -1,0 +1,20 @@
+line-length = 200
+
+[lint]
+select = ["E", "F", "I", "UP"]
+ignore = [
+    "F401",   # unused imports — many are re-exports
+    "F821",   # undefined names — forward references
+    "UP007",  # non-pep604 union — alembic-generated
+    "UP017",  # datetime.UTC — compat
+    "UP035",  # deprecated imports — alembic-generated
+    "UP041",  # timeout error alias
+    "E712",   # true-false comparison — needed for SQLAlchemy filters
+]
+
+[lint.per-file-ignores]
+"alembic/*" = ["ALL"]
+"app/tests/*" = ["ALL"]
+
+[lint.isort]
+known-first-party = ["app"]

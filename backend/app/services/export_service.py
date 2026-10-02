@@ -14,18 +14,18 @@ class ExportService:
             return ""
 
         lines = [
-            f"# Code Review Report",
-            f"",
+            "# Code Review Report",
+            "",
             f"**Review ID:** `{report['review_id']}`  ",
             f"**Overall Score:** {report['overall_score'] or 'N/A'}/10  ",
             f"**Generated:** {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}",
-            f"",
-            f"---",
-            f"",
-            f"## Summary",
-            f"",
+            "",
+            "---",
+            "",
+            "## Summary",
+            "",
             report.get("summary") or "_No summary available._",
-            f"",
+            "",
         ]
 
         findings = report.get("findings", [])
@@ -47,19 +47,19 @@ class ExportService:
                 suggestion = f.get("suggestion")
                 if suggestion:
                     lines.append(f"### Finding {i}: {f.get('category', 'Issue')}")
-                    lines.append(f"")
+                    lines.append("")
                     lines.append(f"**File:** `{f.get('file', '')}`:{f.get('line', '')}  ")
                     lines.append(f"**Severity:** {f.get('severity', 'info')}  ")
                     lines.append(f"**Agent:** {f.get('agent', '')}  ")
-                    lines.append(f"")
+                    lines.append("")
                     lines.append(f"> {f.get('message', '')}")
-                    lines.append(f"")
+                    lines.append("")
                     lines.append(f"**Suggestion:** {suggestion}")
-                    lines.append(f"")
+                    lines.append("")
 
         agent_results = report.get("agent_results", [])
         if agent_results:
-            lines.append(f"## Agent Results")
+            lines.append("## Agent Results")
             lines.append("")
             lines.append("| Agent | Status | Findings | Score |")
             lines.append("|-------|--------|----------|-------|")
@@ -70,7 +70,7 @@ class ExportService:
 
         baseline = report.get("baseline_comparison")
         if baseline:
-            lines.append(f"## Baseline Comparison")
+            lines.append("## Baseline Comparison")
             lines.append("")
             lines.append(f"- Agent findings: {baseline.get('agent_findings_count', 0)}")
             lines.append(f"- Baseline findings: {baseline.get('baseline_findings_count', 0)}")

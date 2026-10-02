@@ -3,12 +3,12 @@ import uuid
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.core.permissions import verify_project_owner, verify_repository_owner
+from app.database.models.user import User
 from app.database.session import get_db
 from app.dependencies import get_current_active_user
-from app.database.models.user import User
 from app.schemas.repository import RepositoryCreate, RepositoryResponse, RepositoryUpdate
 from app.services.repository_service import RepositoryService
-from app.core.permissions import verify_project_owner, verify_repository_owner
 
 router = APIRouter(prefix="/repositories", tags=["repositories"])
 

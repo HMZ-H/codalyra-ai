@@ -2,8 +2,8 @@ import json
 import logging
 
 from app.ai.client import LLMClient
-from app.ai.providers import LLMProvider
 from app.ai.prompts import PROMPT_MAP
+from app.ai.providers import LLMProvider
 
 logger = logging.getLogger(__name__)
 

@@ -1,18 +1,18 @@
-import subprocess
-import shutil
-import tempfile
 import logging
+import shutil
+import subprocess
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from app.database.session import SessionLocal
+from app.database.models.checkpoint import Checkpoint
+from app.database.models.repository import Repository
 from app.database.models.run import Run
 from app.database.models.task import Task
-from app.database.models.repository import Repository
 from app.database.models.trajectory import Trajectory
-from app.database.models.checkpoint import Checkpoint
+from app.database.session import SessionLocal
 
 logger = logging.getLogger(__name__)
 

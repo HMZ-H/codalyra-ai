@@ -1,16 +1,16 @@
-import uuid
 import json
 import logging
+import uuid
 
 from sqlalchemy.orm import Session
 
+from app.ai.analyzer import compare_findings
+from app.ai.fixer import AutoFixer
+from app.database.models.agent_config import AgentConfig
 from app.database.models.review import Review
 from app.database.models.run import Run
 from app.database.models.task import Task
-from app.database.models.agent_config import AgentConfig
 from app.repositories.review_repository import ReviewRepository
-from app.ai.analyzer import compare_findings
-from app.ai.fixer import AutoFixer
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class ReviewService:
             ).all()
         }
 
-        from app.workers.review_tasks import run_specialist_review, run_baseline_review
+        from app.workers.review_tasks import run_baseline_review, run_specialist_review
         for run in runs:
             if run.agent_name == "synthesis-agent":
                 continue
@@ -160,9 +160,9 @@ class ReviewService:
 
     @staticmethod
     def generate_auto_fixes(db: Session, review_id: uuid.UUID) -> list[dict]:
-        from app.database.models.user import User
         from app.ai.client import LLMClient
         from app.core.encryption import decrypt_value
+        from app.database.models.user import User
 
         review = db.get(Review, review_id)
         if not review or review.status != "completed":

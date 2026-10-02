@@ -1,21 +1,21 @@
-import uuid
 import logging
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_current_user
-from app.database.session import get_db
-from app.database.models.user import User
 from app.database.models.team import Team, TeamMember
+from app.database.models.user import User
+from app.database.session import get_db
+from app.dependencies import get_current_user
 from app.schemas.team import (
     VALID_ROLES,
     TeamCreate,
-    TeamUpdate,
     TeamMemberAdd,
-    TeamMemberUpdate,
     TeamMemberResponse,
+    TeamMemberUpdate,
     TeamResponse,
+    TeamUpdate,
 )
 
 logger = logging.getLogger(__name__)

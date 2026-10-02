@@ -3,12 +3,12 @@ import uuid
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.core.permissions import verify_project_owner, verify_task_owner
+from app.database.models.user import User
 from app.database.session import get_db
 from app.dependencies import get_current_active_user
-from app.database.models.user import User
 from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate
 from app.services.task_service import TaskService
-from app.core.permissions import verify_project_owner, verify_task_owner
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 

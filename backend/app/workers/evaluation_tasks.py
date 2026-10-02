@@ -1,11 +1,11 @@
-import subprocess
 import logging
+import subprocess
 
-from app.workers.celery_app import celery_app
-from app.database.session import SessionLocal
+from app.database.models.evaluation import Evaluation
 from app.database.models.run import Run
 from app.database.models.task import Task
-from app.database.models.evaluation import Evaluation
+from app.database.session import SessionLocal
+from app.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 

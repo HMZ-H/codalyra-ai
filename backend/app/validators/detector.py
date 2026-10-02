@@ -1,7 +1,6 @@
 import re
 from collections import Counter
 
-
 EXTENSION_MAP = {
     ".py": "python",
     ".pyw": "python",

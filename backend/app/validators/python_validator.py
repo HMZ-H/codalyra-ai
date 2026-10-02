@@ -1,6 +1,5 @@
 import re
 
-
 PYTHON_PATTERNS = [
     (r'except\s*:', "bare-except", "warning", "Bare except clause — catches all exceptions including SystemExit and KeyboardInterrupt"),
     (r'def\s+\w+\s*\([^)]*=\s*(\[\]|\{\}|\bset\(\))', "mutable-default", "warning", "Mutable default argument — shared across all calls"),

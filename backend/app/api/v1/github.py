@@ -8,16 +8,16 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.database.session import get_db
-from app.dependencies import get_current_active_user
-from app.database.models.user import User
+from app.core.permissions import verify_project_owner, verify_review_owner
 from app.database.models.repository import Repository
 from app.database.models.review import Review
+from app.database.models.user import User
+from app.database.session import get_db
+from app.dependencies import get_current_active_user
+from app.middleware.rate_limit import check_rate_limit
 from app.schemas.review import MAX_DIFF_SIZE
 from app.services.github_service import GitHubService
 from app.services.review_service import ReviewService
-from app.core.permissions import verify_project_owner, verify_review_owner
-from app.middleware.rate_limit import check_rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -159,6 +159,52 @@ def post_review_to_pr(
     return {"comment_id": result.get("id"), "url": result.get("html_url")}
 
 
+@router.post("/repos/{owner}/{repo}/pulls/{pr_number}/post-inline-comments")
+def post_inline_review_to_pr(
+    owner: str,
+    repo: str,
+    pr_number: int,
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    if not current_user.github_token:
+        raise HTTPException(400, "GitHub account not connected")
+
+    review_id = data.get("review_id")
+    if not review_id:
+        raise HTTPException(400, "review_id is required")
+
+    verify_review_owner(db, uuid.UUID(review_id), current_user.id)
+
+    report = ReviewService.get_review_report(db, uuid.UUID(review_id))
+    if not report:
+        raise HTTPException(404, "Review not found")
+
+    findings = report.get("findings", [])
+    file_findings = [f for f in findings if f.get("file") and f.get("line")]
+    if not file_findings:
+        raise HTTPException(400, "No file-level findings to post as inline comments")
+
+    commit_sha = data.get("commit_sha")
+    if not commit_sha:
+        raise HTTPException(400, "commit_sha is required for inline comments")
+
+    comments = [
+        {
+            "path": f["file"],
+            "line": f["line"],
+            "body": f"**{f.get('severity', 'info').upper()}**: {f.get('message', '')}"
+            + (f"\n\n💡 {f['suggestion']}" if f.get("suggestion") else ""),
+        }
+        for f in file_findings
+    ]
+
+    gh = GitHubService(current_user.github_token)
+    result = gh.post_inline_comments(owner, repo, pr_number, commit_sha, comments)
+    return {"review_id": result.get("id"), "url": result.get("html_url")}
+
+
 @router.post("/webhooks")
 async def github_webhook(
     request: Request,
@@ -168,7 +214,13 @@ async def github_webhook(
 ):
     body = await request.body()
 
-    if settings.GITHUB_WEBHOOK_SECRET:
+    MAX_WEBHOOK_PAYLOAD = 5 * 1024 * 1024  # 5 MB
+    if len(body) > MAX_WEBHOOK_PAYLOAD:
+        raise HTTPException(413, "Webhook payload too large")
+
+    if not settings.GITHUB_WEBHOOK_SECRET:
+        logger.warning("GITHUB_WEBHOOK_SECRET is not set — webhook signature validation disabled")
+    else:
         if not x_hub_signature_256:
             raise HTTPException(403, "Missing signature")
         expected = "sha256=" + hmac.new(
@@ -180,6 +232,9 @@ async def github_webhook(
             raise HTTPException(403, "Invalid signature")
 
     payload = json.loads(body)
+
+    if x_github_event == "ping":
+        return {"status": "pong"}
 
     if x_github_event == "pull_request" and payload.get("action") in ("opened", "synchronize"):
         pr = payload["pull_request"]

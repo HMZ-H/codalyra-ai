@@ -1,6 +1,5 @@
 import re
 
-
 GO_PATTERNS = [
     (r'if\s+err\s*!=\s*nil\s*\{[\s\S]*?\breturn\b.*\}', None, None, None),
     (r'\berr\s*=\s*\w+', "unchecked-error", "warning", "Error assigned but not checked — handle or explicitly ignore with _"),

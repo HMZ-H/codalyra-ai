@@ -1,0 +1,24 @@
+ai:
+  label: AI
+  permalink: /ai
+  description: AI and LLM related posts
+
+architecture:
+  label: Architecture
+  permalink: /architecture
+  description: System architecture and design
+
+celery:
+  label: Celery
+  permalink: /celery
+  description: Celery task queue
+
+static-analysis:
+  label: Static Analysis
+  permalink: /static-analysis
+  description: Static code analysis
+
+llm:
+  label: LLM
+  permalink: /llm
+  description: Large Language Models
